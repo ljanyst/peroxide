@@ -1,1 +1,0 @@
-- when cache is full, we need to stop the watcher? don't want to keep downloading messages and throwing them away when we try to cache them.
