@@ -25,13 +25,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ljanyst/peroxide/pkg/sentry"
-	"github.com/ljanyst/peroxide/pkg/store/cache"
+	"github.com/hashicorp/go-multierror"
 	"github.com/ljanyst/peroxide/pkg/listener"
 	"github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/ljanyst/peroxide/pkg/pool"
-	"github.com/hashicorp/go-multierror"
+	"github.com/ljanyst/peroxide/pkg/store/cache"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
@@ -121,11 +120,10 @@ func exposeContextForSMTP() context.Context {
 
 // Store is local user storage, which handles the synchronization between IMAP and PM API.
 type Store struct {
-	sentryReporter *sentry.Reporter
-	panicHandler   PanicHandler
-	user           BridgeUser
-	eventLoop      *eventLoop
-	currentEvents  *Events
+	panicHandler  PanicHandler
+	user          BridgeUser
+	eventLoop     *eventLoop
+	currentEvents *Events
 
 	log *logrus.Entry
 
@@ -147,7 +145,6 @@ type Store struct {
 
 // New creates or opens a store for the given `user`.
 func New( // nolint[funlen]
-	sentryReporter *sentry.Reporter,
 	panicHandler PanicHandler,
 	user BridgeUser,
 	listener listener.Listener,
@@ -177,10 +174,9 @@ func New( // nolint[funlen]
 	}
 
 	store = &Store{
-		sentryReporter: sentryReporter,
-		panicHandler:   panicHandler,
-		user:           user,
-		currentEvents:  currentEvents,
+		panicHandler:  panicHandler,
+		user:          user,
+		currentEvents: currentEvents,
 
 		log: l,
 

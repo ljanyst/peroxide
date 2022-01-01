@@ -28,13 +28,13 @@ import (
 	"time"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
-	"github.com/ljanyst/peroxide/pkg/store/cache"
-	storemocks "github.com/ljanyst/peroxide/pkg/store/mocks"
+	"github.com/golang/mock/gomock"
 	"github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
 	pmapimocks "github.com/ljanyst/peroxide/pkg/pmapi/mocks"
+	"github.com/ljanyst/peroxide/pkg/store/cache"
+	storemocks "github.com/ljanyst/peroxide/pkg/store/mocks"
 	tests "github.com/ljanyst/peroxide/test"
-	"github.com/golang/mock/gomock"
 
 	"github.com/stretchr/testify/require"
 )
@@ -214,7 +214,6 @@ func (mocks *mocksForStore) newStoreNoEvents(t *testing.T, combinedMode bool, ms
 
 	var err error
 	mocks.store, err = New(
-		nil, // Sentry reporter is not used under unit tests.
 		mocks.panicHandler,
 		mocks.user,
 		mocks.events,

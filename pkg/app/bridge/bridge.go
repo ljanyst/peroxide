@@ -31,11 +31,11 @@ import (
 	"github.com/ljanyst/peroxide/pkg/frontend"
 	"github.com/ljanyst/peroxide/pkg/frontend/types"
 	"github.com/ljanyst/peroxide/pkg/imap"
+	"github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/smtp"
 	"github.com/ljanyst/peroxide/pkg/store"
 	"github.com/ljanyst/peroxide/pkg/store/cache"
 	"github.com/ljanyst/peroxide/pkg/updater"
-	"github.com/ljanyst/peroxide/pkg/message"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
@@ -89,7 +89,6 @@ func mailLoop(b *base.Base, c *cli.Context) error { // nolint[funlen]
 		b.Locations,
 		b.Cache,
 		b.Settings,
-		b.SentryReporter,
 		b.CrashHandler,
 		b.Listener,
 		cache,

@@ -19,7 +19,6 @@
 package crash
 
 import (
-	"github.com/ljanyst/peroxide/pkg/sentry"
 	"github.com/sirupsen/logrus"
 )
 
@@ -39,8 +38,6 @@ func (h *Handler) AddRecoveryAction(action RecoveryAction) *Handler {
 }
 
 func (h *Handler) HandlePanic() {
-	sentry.SkipDuringUnwind()
-
 	r := recover()
 	if r == nil {
 		return

@@ -39,6 +39,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/ProtonMail/go-autostart"
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
+	"github.com/allan-simon/go-singleinstance"
 	"github.com/ljanyst/peroxide/pkg/api"
 	"github.com/ljanyst/peroxide/pkg/config/cache"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
@@ -48,16 +49,14 @@ import (
 	"github.com/ljanyst/peroxide/pkg/cookies"
 	"github.com/ljanyst/peroxide/pkg/crash"
 	"github.com/ljanyst/peroxide/pkg/events"
+	"github.com/ljanyst/peroxide/pkg/keychain"
+	"github.com/ljanyst/peroxide/pkg/listener"
 	"github.com/ljanyst/peroxide/pkg/locations"
 	"github.com/ljanyst/peroxide/pkg/logging"
-	"github.com/ljanyst/peroxide/pkg/sentry"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/ljanyst/peroxide/pkg/updater"
 	"github.com/ljanyst/peroxide/pkg/users/credentials"
 	"github.com/ljanyst/peroxide/pkg/versioner"
-	"github.com/ljanyst/peroxide/pkg/keychain"
-	"github.com/ljanyst/peroxide/pkg/listener"
-	"github.com/ljanyst/peroxide/pkg/pmapi"
-	"github.com/allan-simon/go-singleinstance"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 )
@@ -78,21 +77,20 @@ const (
 )
 
 type Base struct {
-	SentryReporter *sentry.Reporter
-	CrashHandler   *crash.Handler
-	Locations      *locations.Locations
-	Settings       *settings.Settings
-	Lock           *os.File
-	Cache          *cache.Cache
-	Listener       listener.Listener
-	Creds          *credentials.Store
-	CM             pmapi.Manager
-	CookieJar      *cookies.Jar
-	UserAgent      *useragent.UserAgent
-	Updater        *updater.Updater
-	Versioner      *versioner.Versioner
-	TLS            *tls.TLS
-	Autostart      *autostart.App
+	CrashHandler *crash.Handler
+	Locations    *locations.Locations
+	Settings     *settings.Settings
+	Lock         *os.File
+	Cache        *cache.Cache
+	Listener     listener.Listener
+	Creds        *credentials.Store
+	CM           pmapi.Manager
+	CookieJar    *cookies.Jar
+	UserAgent    *useragent.UserAgent
+	Updater      *updater.Updater
+	Versioner    *versioner.Versioner
+	TLS          *tls.TLS
+	Autostart    *autostart.App
 
 	Name    string // the app's name
 	usage   string // the app's usage description
@@ -112,10 +110,7 @@ func New( // nolint[funlen]
 ) (*Base, error) {
 	userAgent := useragent.New()
 
-	sentryReporter := sentry.NewReporter(appName, constants.Version, userAgent)
-
 	crashHandler := crash.NewHandler(
-		sentryReporter.ReportException,
 		crash.ShowErrorNotification(appName),
 	)
 	defer crashHandler.HandlePanic()
@@ -240,21 +235,20 @@ func New( // nolint[funlen]
 	}
 
 	return &Base{
-		SentryReporter: sentryReporter,
-		CrashHandler:   crashHandler,
-		Locations:      locations,
-		Settings:       settingsObj,
-		Lock:           lock,
-		Cache:          cache,
-		Listener:       listener,
-		Creds:          credentials.NewStore(kc),
-		CM:             cm,
-		CookieJar:      jar,
-		UserAgent:      userAgent,
-		Updater:        updater,
-		Versioner:      versioner,
-		TLS:            tls.New(settingsPath),
-		Autostart:      autostart,
+		CrashHandler: crashHandler,
+		Locations:    locations,
+		Settings:     settingsObj,
+		Lock:         lock,
+		Cache:        cache,
+		Listener:     listener,
+		Creds:        credentials.NewStore(kc),
+		CM:           cm,
+		CookieJar:    jar,
+		UserAgent:    userAgent,
+		Updater:      updater,
+		Versioner:    versioner,
+		TLS:          tls.New(settingsPath),
+		Autostart:    autostart,
 
 		Name:  appName,
 		usage: appUsage,

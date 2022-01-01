@@ -33,9 +33,6 @@ var (
 	// BuildTime stamp of the build.
 	BuildTime = ""
 
-	// DSNSentry client keys to be able to report crashes to Sentry.
-	DSNSentry = ""
-
 	// BuildVersion is derived from LongVersion and BuildTime.
 	BuildVersion = fmt.Sprintf("%v (%v) %v", Version, Revision, BuildTime)
 )

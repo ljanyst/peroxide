@@ -21,47 +21,42 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/ljanyst/peroxide/pkg/sentry"
+	"github.com/ljanyst/peroxide/pkg/listener"
+	"github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/store"
 	"github.com/ljanyst/peroxide/pkg/store/cache"
 	"github.com/ljanyst/peroxide/pkg/users"
-	"github.com/ljanyst/peroxide/pkg/listener"
-	"github.com/ljanyst/peroxide/pkg/message"
 )
 
 type storeFactory struct {
-	cacheProvider  CacheProvider
-	sentryReporter *sentry.Reporter
-	panicHandler   users.PanicHandler
-	eventListener  listener.Listener
-	events         *store.Events
-	cache          cache.Cache
-	builder        *message.Builder
+	cacheProvider CacheProvider
+	panicHandler  users.PanicHandler
+	eventListener listener.Listener
+	events        *store.Events
+	cache         cache.Cache
+	builder       *message.Builder
 }
 
 func newStoreFactory(
 	cacheProvider CacheProvider,
-	sentryReporter *sentry.Reporter,
 	panicHandler users.PanicHandler,
 	eventListener listener.Listener,
 	cache cache.Cache,
 	builder *message.Builder,
 ) *storeFactory {
 	return &storeFactory{
-		cacheProvider:  cacheProvider,
-		sentryReporter: sentryReporter,
-		panicHandler:   panicHandler,
-		eventListener:  eventListener,
-		events:         store.NewEvents(cacheProvider.GetIMAPCachePath()),
-		cache:          cache,
-		builder:        builder,
+		cacheProvider: cacheProvider,
+		panicHandler:  panicHandler,
+		eventListener: eventListener,
+		events:        store.NewEvents(cacheProvider.GetIMAPCachePath()),
+		cache:         cache,
+		builder:       builder,
 	}
 }
 
 // New creates new store for given user.
 func (f *storeFactory) New(user store.BridgeUser) (*store.Store, error) {
 	return store.New(
-		f.sentryReporter,
 		f.panicHandler,
 		user,
 		f.eventListener,

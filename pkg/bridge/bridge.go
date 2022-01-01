@@ -28,13 +28,12 @@ import (
 	"github.com/ProtonMail/go-autostart"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
 	"github.com/ljanyst/peroxide/pkg/constants"
+	"github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/metrics"
-	"github.com/ljanyst/peroxide/pkg/sentry"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/ljanyst/peroxide/pkg/store/cache"
 	"github.com/ljanyst/peroxide/pkg/updater"
 	"github.com/ljanyst/peroxide/pkg/users"
-	"github.com/ljanyst/peroxide/pkg/message"
-	"github.com/ljanyst/peroxide/pkg/pmapi"
 
 	"github.com/ljanyst/peroxide/pkg/listener"
 	logrus "github.com/sirupsen/logrus"
@@ -65,7 +64,6 @@ func New(
 	locations Locator,
 	cacheProvider CacheProvider,
 	setting SettingsProvider,
-	sentryReporter *sentry.Reporter,
 	panicHandler users.PanicHandler,
 	eventListener listener.Listener,
 	cache cache.Cache,
@@ -88,7 +86,7 @@ func New(
 		eventListener,
 		clientManager,
 		credStorer,
-		newStoreFactory(cacheProvider, sentryReporter, panicHandler, eventListener, cache, builder),
+		newStoreFactory(cacheProvider, panicHandler, eventListener, cache, builder),
 	)
 
 	b := &Bridge{

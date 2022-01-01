@@ -32,9 +32,6 @@ import (
 const (
 	pollInterval       = 30 * time.Second
 	pollIntervalSpread = 5 * time.Second
-
-	// errMaxSentry defines after how many errors in a row to report it to sentry.
-	errMaxSentry = 20
 )
 
 type eventLoop struct {
@@ -246,16 +243,6 @@ func (loop *eventLoop) processNextEvent() (more bool, err error) { // nolint[fun
 		if err != nil && errors.Cause(err) != pmapi.ErrUnauthorized {
 			l.WithError(err).WithField("errors", loop.errCounter).Error("Error skipped")
 			loop.errCounter++
-			if loop.errCounter == errMaxSentry {
-				context := map[string]interface{}{
-					"EventLoop": map[string]interface{}{
-						"EventID": loop.currentEventID,
-					},
-				}
-				if sentryErr := loop.store.sentryReporter.ReportMessageWithContext("Warning: event loop issues: "+err.Error(), context); sentryErr != nil {
-					l.WithError(sentryErr).Error("Failed to report error to sentry")
-				}
-			}
 			err = nil
 		}
 	}()
@@ -306,16 +293,6 @@ func (loop *eventLoop) processEvent(event *pmapi.Event) (err error) {
 	if (event.Refresh & pmapi.EventRefreshMail) != 0 {
 		eventLog.Info("Processing refresh event")
 		loop.store.triggerSync()
-
-		context := map[string]interface{}{
-			"EventLoop": map[string]interface{}{
-				"EventID": loop.currentEventID,
-			},
-		}
-		if sentryErr := loop.store.sentryReporter.ReportMessageWithContext("Warning: refresh occurred", context); sentryErr != nil {
-			loop.log.WithError(sentryErr).Error("Failed to report refresh to sentry")
-		}
-
 		return
 	}
 

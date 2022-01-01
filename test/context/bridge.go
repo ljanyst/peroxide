@@ -25,12 +25,11 @@ import (
 	"github.com/ljanyst/peroxide/pkg/config/settings"
 	"github.com/ljanyst/peroxide/pkg/config/useragent"
 	"github.com/ljanyst/peroxide/pkg/constants"
-	"github.com/ljanyst/peroxide/pkg/sentry"
-	"github.com/ljanyst/peroxide/pkg/store/cache"
-	"github.com/ljanyst/peroxide/pkg/users"
 	"github.com/ljanyst/peroxide/pkg/listener"
 	"github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/store/cache"
+	"github.com/ljanyst/peroxide/pkg/users"
 )
 
 // GetBridge returns bridge instance.
@@ -79,7 +78,6 @@ func newBridgeInstance(
 		locations,
 		cacheProvider,
 		fakeSettings,
-		sentry.NewReporter("bridge", constants.Version, useragent.New()),
 		&panicHandler{t: t},
 		eventListener,
 		cache.NewInMemoryCache(100*(1<<20)),

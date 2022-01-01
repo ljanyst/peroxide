@@ -26,17 +26,16 @@ import (
 	"testing"
 	"time"
 
+	gomock "github.com/golang/mock/gomock"
 	"github.com/ljanyst/peroxide/pkg/events"
-	"github.com/ljanyst/peroxide/pkg/sentry"
+	"github.com/ljanyst/peroxide/pkg/message"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
+	pmapimocks "github.com/ljanyst/peroxide/pkg/pmapi/mocks"
 	"github.com/ljanyst/peroxide/pkg/store"
 	"github.com/ljanyst/peroxide/pkg/store/cache"
 	"github.com/ljanyst/peroxide/pkg/users/credentials"
 	usersmocks "github.com/ljanyst/peroxide/pkg/users/mocks"
-	"github.com/ljanyst/peroxide/pkg/message"
-	"github.com/ljanyst/peroxide/pkg/pmapi"
-	pmapimocks "github.com/ljanyst/peroxide/pkg/pmapi/mocks"
 	tests "github.com/ljanyst/peroxide/test"
-	gomock "github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	r "github.com/stretchr/testify/require"
@@ -197,13 +196,10 @@ func initMocks(t *testing.T) mocks {
 
 	// Set up store factory.
 	m.storeMaker.EXPECT().New(gomock.Any()).DoAndReturn(func(user store.BridgeUser) (*store.Store, error) {
-		var sentryReporter *sentry.Reporter // Sentry reporter is not used under unit tests.
-
 		dbFile, err := ioutil.TempFile(t.TempDir(), "bridge-store-db-*.db")
 		r.NoError(t, err, "could not get temporary file for store db")
 
 		return store.New(
-			sentryReporter,
 			m.PanicHandler,
 			user,
 			m.eventListener,
