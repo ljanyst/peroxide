@@ -25,13 +25,13 @@ const VendorName = "protonmail"
 // nolint[gochecknoglobals]
 var (
 	// Version of the build.
-	Version = ""
+	Version = "1000.1000.1000+git"
 
 	// Revision is current hash of the build.
-	Revision = ""
+	Revision = "bf2a7aaf0f"
 
 	// BuildTime stamp of the build.
-	BuildTime = ""
+	BuildTime = "2022-01-01T17:20:35+0100"
 
 	// BuildVersion is derived from LongVersion and BuildTime.
 	BuildVersion = fmt.Sprintf("%v (%v) %v", Version, Revision, BuildTime)
