@@ -20,7 +20,7 @@ package pool
 import (
 	"sync"
 
-	"github.com/ProtonMail/proton-bridge/pkg/pchan"
+	"github.com/ljanyst/peroxide/pkg/pchan"
 )
 
 type WorkFunc func(interface{}, int) (interface{}, error)

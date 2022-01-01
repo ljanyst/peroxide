@@ -20,12 +20,12 @@ package context
 import (
 	"os"
 
-	"github.com/ProtonMail/proton-bridge/internal/events"
-	"github.com/ProtonMail/proton-bridge/pkg/listener"
-	"github.com/ProtonMail/proton-bridge/pkg/pmapi"
-	"github.com/ProtonMail/proton-bridge/test/accounts"
-	"github.com/ProtonMail/proton-bridge/test/fakeapi"
-	"github.com/ProtonMail/proton-bridge/test/liveapi"
+	"github.com/ljanyst/peroxide/pkg/events"
+	"github.com/ljanyst/peroxide/pkg/listener"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
+	"github.com/ljanyst/peroxide/test/accounts"
+	"github.com/ljanyst/peroxide/test/fakeapi"
+	"github.com/ljanyst/peroxide/test/liveapi"
 )
 
 type PMAPIController interface {

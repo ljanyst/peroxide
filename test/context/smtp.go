@@ -21,11 +21,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ProtonMail/proton-bridge/internal/bridge"
-	"github.com/ProtonMail/proton-bridge/internal/config/settings"
-	"github.com/ProtonMail/proton-bridge/internal/config/tls"
-	"github.com/ProtonMail/proton-bridge/internal/smtp"
-	"github.com/ProtonMail/proton-bridge/test/mocks"
+	"github.com/ljanyst/peroxide/pkg/bridge"
+	"github.com/ljanyst/peroxide/pkg/config/settings"
+	"github.com/ljanyst/peroxide/pkg/config/tls"
+	"github.com/ljanyst/peroxide/pkg/smtp"
+	"github.com/ljanyst/peroxide/test/mocks"
 	"github.com/stretchr/testify/require"
 )
 

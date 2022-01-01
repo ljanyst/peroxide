@@ -21,7 +21,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ProtonMail/proton-bridge/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
 )
 
 func (api *FakePMAPI) isLabelFolder(labelID string) bool {

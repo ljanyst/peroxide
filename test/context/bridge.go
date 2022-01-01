@@ -21,16 +21,16 @@ import (
 	"time"
 
 	"github.com/ProtonMail/go-autostart"
-	"github.com/ProtonMail/proton-bridge/internal/bridge"
-	"github.com/ProtonMail/proton-bridge/internal/config/settings"
-	"github.com/ProtonMail/proton-bridge/internal/config/useragent"
-	"github.com/ProtonMail/proton-bridge/internal/constants"
-	"github.com/ProtonMail/proton-bridge/internal/sentry"
-	"github.com/ProtonMail/proton-bridge/internal/store/cache"
-	"github.com/ProtonMail/proton-bridge/internal/users"
-	"github.com/ProtonMail/proton-bridge/pkg/listener"
-	"github.com/ProtonMail/proton-bridge/pkg/message"
-	"github.com/ProtonMail/proton-bridge/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/bridge"
+	"github.com/ljanyst/peroxide/pkg/config/settings"
+	"github.com/ljanyst/peroxide/pkg/config/useragent"
+	"github.com/ljanyst/peroxide/pkg/constants"
+	"github.com/ljanyst/peroxide/pkg/sentry"
+	"github.com/ljanyst/peroxide/pkg/store/cache"
+	"github.com/ljanyst/peroxide/pkg/users"
+	"github.com/ljanyst/peroxide/pkg/listener"
+	"github.com/ljanyst/peroxide/pkg/message"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
 )
 
 // GetBridge returns bridge instance.

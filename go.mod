@@ -1,4 +1,4 @@
-module github.com/ProtonMail/proton-bridge
+module github.com/ljanyst/peroxide
 
 go 1.15
 

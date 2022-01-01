@@ -20,7 +20,7 @@ package fakeapi
 import (
 	"encoding/json"
 
-	"github.com/ProtonMail/proton-bridge/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
 )
 
 type method string

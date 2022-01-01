@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ProtonMail/proton-bridge/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/cucumber/godog"
 )
 

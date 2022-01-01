@@ -28,9 +28,9 @@ import (
 	"strings"
 
 	"github.com/ProtonMail/go-rfc5322"
-	"github.com/ProtonMail/proton-bridge/pkg/message/parser"
-	pmmime "github.com/ProtonMail/proton-bridge/pkg/mime"
-	"github.com/ProtonMail/proton-bridge/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/message/parser"
+	pmmime "github.com/ljanyst/peroxide/pkg/mime"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/emersion/go-message"
 	"github.com/jaytaylor/html2text"
 	"github.com/pkg/errors"

@@ -23,7 +23,7 @@ import (
 
 	"github.com/ProtonMail/gopenpgp/v2/constants"
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
-	"github.com/ProtonMail/proton-bridge/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/emersion/go-message"
 )
 

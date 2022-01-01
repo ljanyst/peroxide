@@ -24,7 +24,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ProtonMail/proton-bridge/pkg/message"
+	"github.com/ljanyst/peroxide/pkg/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

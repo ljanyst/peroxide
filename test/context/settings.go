@@ -21,7 +21,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 
-	"github.com/ProtonMail/proton-bridge/internal/config/settings"
+	"github.com/ljanyst/peroxide/pkg/config/settings"
 )
 
 type fakeSettings struct {

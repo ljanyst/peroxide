@@ -22,7 +22,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ProtonMail/proton-bridge/internal/constants"
+	"github.com/ljanyst/peroxide/pkg/constants"
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 )

@@ -20,7 +20,7 @@ package fakeapi
 import (
 	"context"
 
-	"github.com/ProtonMail/proton-bridge/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
 )
 
 func (api *FakePMAPI) GetEvent(_ context.Context, eventID string) (*pmapi.Event, error) {

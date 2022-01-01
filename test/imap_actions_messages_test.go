@@ -25,7 +25,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ProtonMail/proton-bridge/test/mocks"
+	"github.com/ljanyst/peroxide/test/mocks"
 	"github.com/cucumber/godog"
 	"golang.org/x/net/html/charset"
 )

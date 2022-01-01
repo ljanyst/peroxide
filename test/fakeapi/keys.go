@@ -20,7 +20,7 @@ package fakeapi
 import (
 	"context"
 
-	"github.com/ProtonMail/proton-bridge/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
 )
 
 // publicKey is used from pmapi unit tests.

@@ -21,13 +21,13 @@ package context
 import (
 	"sync"
 
-	"github.com/ProtonMail/proton-bridge/internal/bridge"
-	"github.com/ProtonMail/proton-bridge/internal/config/useragent"
-	"github.com/ProtonMail/proton-bridge/internal/users"
-	"github.com/ProtonMail/proton-bridge/pkg/listener"
-	"github.com/ProtonMail/proton-bridge/pkg/pmapi"
-	"github.com/ProtonMail/proton-bridge/test/accounts"
-	"github.com/ProtonMail/proton-bridge/test/mocks"
+	"github.com/ljanyst/peroxide/pkg/bridge"
+	"github.com/ljanyst/peroxide/pkg/config/useragent"
+	"github.com/ljanyst/peroxide/pkg/users"
+	"github.com/ljanyst/peroxide/pkg/listener"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
+	"github.com/ljanyst/peroxide/test/accounts"
+	"github.com/ljanyst/peroxide/test/mocks"
 	"github.com/sirupsen/logrus"
 )
 

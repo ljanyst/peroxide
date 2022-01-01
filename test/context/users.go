@@ -25,9 +25,9 @@ import (
 	"time"
 
 	"github.com/ProtonMail/go-srp"
-	"github.com/ProtonMail/proton-bridge/internal/store"
-	"github.com/ProtonMail/proton-bridge/internal/users"
-	"github.com/ProtonMail/proton-bridge/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/store"
+	"github.com/ljanyst/peroxide/pkg/users"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )

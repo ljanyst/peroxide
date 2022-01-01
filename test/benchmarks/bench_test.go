@@ -22,8 +22,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ProtonMail/proton-bridge/test/context"
-	"github.com/ProtonMail/proton-bridge/test/mocks"
+	"github.com/ljanyst/peroxide/test/context"
+	"github.com/ljanyst/peroxide/test/mocks"
 )
 
 func benchTestContext() (*context.TestContext, *mocks.IMAPClient) {

@@ -19,7 +19,7 @@ package message
 
 import (
 	"github.com/ProtonMail/go-rfc5322"
-	pmmime "github.com/ProtonMail/proton-bridge/pkg/mime"
+	pmmime "github.com/ljanyst/peroxide/pkg/mime"
 )
 
 func init() { // nolint[noinit]

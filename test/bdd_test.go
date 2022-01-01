@@ -20,7 +20,7 @@ package tests
 import (
 	"context"
 
-	testContext "github.com/ProtonMail/proton-bridge/test/context"
+	testContext "github.com/ljanyst/peroxide/test/context"
 	"github.com/cucumber/godog"
 )
 

@@ -20,8 +20,8 @@ package liveapi
 import (
 	"context"
 
-	messageUtils "github.com/ProtonMail/proton-bridge/pkg/message"
-	"github.com/ProtonMail/proton-bridge/pkg/pmapi"
+	messageUtils "github.com/ljanyst/peroxide/pkg/message"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/pkg/errors"
 )
 

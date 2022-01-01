@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ProtonMail/proton-bridge/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/pkg/errors"
 )
 

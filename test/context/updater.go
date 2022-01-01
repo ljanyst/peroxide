@@ -18,7 +18,7 @@
 package context
 
 import (
-	"github.com/ProtonMail/proton-bridge/internal/updater"
+	"github.com/ljanyst/peroxide/pkg/updater"
 )
 
 type fakeUpdater struct{}

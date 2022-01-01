@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/ProtonMail/proton-bridge/internal/config/settings"
+	"github.com/ljanyst/peroxide/pkg/config/settings"
 	"github.com/docker/docker-credential-helpers/credentials"
 )
 

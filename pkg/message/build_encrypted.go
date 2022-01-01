@@ -29,8 +29,8 @@ import (
 	"strings"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
-	pmmime "github.com/ProtonMail/proton-bridge/pkg/mime"
-	"github.com/ProtonMail/proton-bridge/pkg/pmapi"
+	pmmime "github.com/ljanyst/peroxide/pkg/mime"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/emersion/go-message"
 	"github.com/emersion/go-textwrapper"
 )

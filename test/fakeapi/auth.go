@@ -20,7 +20,7 @@ package fakeapi
 import (
 	"context"
 
-	"github.com/ProtonMail/proton-bridge/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
 )
 
 func (api *FakePMAPI) Auth2FA(_ context.Context, twoFactorCode string) error {
