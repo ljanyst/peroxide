@@ -173,8 +173,7 @@ func New( // nolint[funlen]
 	// we signal to frontend and supply a dummy keychain that always returns errors.
 	kc, err := keychain.NewKeychain(settingsObj, keychainName)
 	if err != nil {
-		listener.Emit(events.CredentialsErrorEvent, err.Error())
-		kc = keychain.NewMissingKeychain()
+		return nil, err
 	}
 
 	cfg := pmapi.NewConfig(configName, constants.Version)

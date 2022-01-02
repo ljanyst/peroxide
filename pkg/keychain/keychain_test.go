@@ -21,7 +21,6 @@ import (
 	"encoding/base64"
 	"testing"
 
-	"github.com/docker/docker-credential-helpers/credentials"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,7 +32,7 @@ var testData = map[string]string{ //nolint[gochecknoglobals]
 }
 
 func TestInsertReadRemove(t *testing.T) {
-	keychain := newKeychain(newTestHelper(), hostURL("bridge"))
+	keychain := newKeychain(newTestHelper(), "protonmail/bridge/users")
 
 	for id, secret := range testData {
 		expectedList, _ := keychain.List()
@@ -116,13 +115,13 @@ func TestInsertReadRemove(t *testing.T) {
 	}
 }
 
-type testHelper map[string]*credentials.Credentials
+type testHelper map[string]*Credentials
 
 func newTestHelper() testHelper {
 	return make(testHelper)
 }
 
-func (h testHelper) Add(creds *credentials.Credentials) error {
+func (h testHelper) Add(creds *Credentials) error {
 	h[creds.ServerURL] = creds
 	return nil
 }

@@ -1,78 +1,44 @@
 // Copyright (c) 2021 Proton Technologies AG
+// Copyright (c) 2022 Lukasz Janyst <lukasz@jany.st>
 //
-// This file is part of ProtonMail Bridge.
+// This file is part of Peroxide.
 //
-// ProtonMail Bridge is free software: you can redistribute it and/or modify
+// Peroxide is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// ProtonMail Bridge is distributed in the hope that it will be useful,
+// Peroxide is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with ProtonMail Bridge.  If not, see <https://www.gnu.org/licenses/>.
+// along with Peroxide.  If not, see <https://www.gnu.org/licenses/>.
 
-// Package keychain implements a native secure password store for each platform.
 package keychain
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/ljanyst/peroxide/pkg/config/settings"
-	"github.com/docker/docker-credential-helpers/credentials"
 )
-
-// helperConstructor constructs a keychain helperConstructor.
-type helperConstructor func(string) (credentials.Helper, error)
 
 // Version is the keychain data version.
 const Version = "k11"
 
-var (
-	// ErrNoKeychain indicates that no suitable keychain implementation could be loaded.
-	ErrNoKeychain = errors.New("no keychain") // nolint[noglobals]
-
-	// Helpers holds all discovered keychain helpers. It is populated in init().
-	Helpers map[string]helperConstructor // nolint[noglobals]
-
-	// defaultHelper is the default helper to use if the user hasn't yet set a preference.
-	defaultHelper string // nolint[noglobals]
-)
-
 // NewKeychain creates a new native keychain.
 func NewKeychain(s *settings.Settings, keychainName string) (*Keychain, error) {
-	// There must be at least one keychain helper available.
-	if len(Helpers) < 1 {
-		return nil, ErrNoKeychain
-	}
-
-	// If the preferred keychain is unsupported, fallback to the default one.
-	// NOTE: Maybe we want to error out here and show something in the GUI instead?
-	if _, ok := Helpers[s.Get(settings.PreferredKeychainKey)]; !ok {
-		s.Set(settings.PreferredKeychainKey, defaultHelper)
-	}
-
-	// Load the user's preferred keychain helper.
-	helperConstructor, ok := Helpers[s.Get(settings.PreferredKeychainKey)]
-	if !ok {
-		return nil, ErrNoKeychain
-	}
-
-	// Construct the keychain helper.
-	helper, err := helperConstructor(hostURL(keychainName))
+	helper, err := newStaticKeychain()
 	if err != nil {
 		return nil, err
 	}
 
-	return newKeychain(helper, hostURL(keychainName)), nil
+	return newKeychain(helper, fmt.Sprintf("protonmail/%v/users", keychainName)), nil
 }
 
-func newKeychain(helper credentials.Helper, url string) *Keychain {
+func newKeychain(helper Helper, url string) *Keychain {
 	return &Keychain{
 		helper: helper,
 		url:    url,
@@ -81,7 +47,7 @@ func newKeychain(helper credentials.Helper, url string) *Keychain {
 }
 
 type Keychain struct {
-	helper credentials.Helper
+	helper Helper
 	url    string
 	locker sync.Locker
 }
@@ -136,7 +102,7 @@ func (kc *Keychain) Put(userID, secret string) error {
 	kc.locker.Lock()
 	defer kc.locker.Unlock()
 
-	return kc.helper.Add(&credentials.Credentials{
+	return kc.helper.Add(&Credentials{
 		ServerURL: kc.secretURL(userID),
 		Username:  userID,
 		Secret:    secret,

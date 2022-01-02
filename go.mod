@@ -5,8 +5,8 @@ go 1.15
 // These dependencies are `replace`d below, so the version numbers should be ignored.
 // They are in a separate require block to highlight this.
 require (
-	github.com/docker/docker-credential-helpers v0.6.3
 	github.com/emersion/go-imap v1.0.6
+	github.com/emersion/go-message v0.12.1-0.20201221184100-40c3f864532b
 	github.com/jameskeane/bcrypt v0.0.0-20170924085257-7509ea014998 // indirect
 )
 
@@ -32,7 +32,6 @@ require (
 	github.com/emersion/go-imap-move v0.0.0-20190710073258-6e5a51a5b342
 	github.com/emersion/go-imap-quota v0.0.0-20210203125329-619074823f3c
 	github.com/emersion/go-imap-unselect v0.0.0-20171113212723-b985794e5f26
-	github.com/emersion/go-message v0.12.1-0.20201221184100-40c3f864532b
 	github.com/emersion/go-sasl v0.0.0-20200509203442-7bfe0ed36a21
 	github.com/emersion/go-smtp v0.14.0
 	github.com/emersion/go-textwrapper v0.0.0-20200911093747-65d896831594
@@ -45,7 +44,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/jaytaylor/html2text v0.0.0-20200412013138-3577fbdbcff7
-	github.com/keybase/go-keychain v0.0.0-20200502122510-cda31fe0c86d
+	github.com/kr/text v0.2.0 // indirect
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/miekg/dns v1.1.41
@@ -66,7 +65,6 @@ require (
 )
 
 replace (
-	github.com/docker/docker-credential-helpers => github.com/ProtonMail/docker-credential-helpers v1.1.0
 	github.com/emersion/go-imap => github.com/ProtonMail/go-imap v0.0.0-20201228133358-4db68cea0cac
 	github.com/emersion/go-message => github.com/ProtonMail/go-message v0.0.0-20210611055058-fabeff2ec753
 	github.com/jameskeane/bcrypt => github.com/ProtonMail/bcrypt v0.0.0-20210511135022-227b4adcab57
