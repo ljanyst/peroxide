@@ -24,7 +24,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ProtonMail/go-autostart"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
 	"github.com/ljanyst/peroxide/pkg/constants"
 	"github.com/ljanyst/peroxide/pkg/message"
@@ -48,7 +47,6 @@ type Bridge struct {
 	settings      SettingsProvider
 	clientManager pmapi.Manager
 	cacheProvider CacheProvider
-	autostart     *autostart.App
 	// Bridge's global errors list.
 	errors []error
 
@@ -65,7 +63,6 @@ func New(
 	builder *message.Builder,
 	clientManager pmapi.Manager,
 	credStorer users.CredentialsStorer,
-	autostart *autostart.App,
 ) *Bridge {
 	// Allow DoH before starting the app if the user has previously set this setting.
 	// This allows us to start even if protonmail is blocked.
@@ -87,7 +84,6 @@ func New(
 		settings:      setting,
 		clientManager: clientManager,
 		cacheProvider: cacheProvider,
-		autostart:     autostart,
 		isFirstStart:  false,
 	}
 
@@ -97,9 +93,6 @@ func New(
 			logrus.WithError(err).Error("Failed to send metric")
 		}
 
-		if err := b.EnableAutostart(); err != nil {
-			log.WithError(err).Error("Failed to enable autostart")
-		}
 		setting.SetBool(settings.FirstStartKey, false)
 	}
 

@@ -34,7 +34,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/ProtonMail/go-autostart"
 	"github.com/allan-simon/go-singleinstance"
 	"github.com/ljanyst/peroxide/pkg/api"
 	"github.com/ljanyst/peroxide/pkg/config/cache"
@@ -64,7 +63,6 @@ type Base struct {
 	CookieJar *cookies.Jar
 	UserAgent *useragent.UserAgent
 	TLS       *tls.TLS
-	Autostart *autostart.App
 
 	Name    string // the app's name
 	usage   string // the app's usage description
@@ -163,17 +161,6 @@ func New( // nolint[funlen]
 
 	cm.SetCookieJar(jar)
 
-	exe, err := os.Executable()
-	if err != nil {
-		return nil, err
-	}
-
-	autostart := &autostart.App{
-		Name:        appName,
-		DisplayName: appName,
-		Exec:        []string{exe},
-	}
-
 	return &Base{
 		Locations: locations,
 		Settings:  settingsObj,
@@ -185,14 +172,8 @@ func New( // nolint[funlen]
 		CookieJar: jar,
 		UserAgent: userAgent,
 		TLS:       tls.New(settingsPath),
-		Autostart: autostart,
 
-		Name:  appName,
-		usage: appUsage,
-
-		// By default, the command is the app's executable.
-		// This can be changed at runtime by using the "--launcher" flag.
-		command: exe,
+		Name: appName,
 	}, nil
 }
 

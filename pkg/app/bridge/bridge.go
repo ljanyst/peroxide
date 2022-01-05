@@ -67,7 +67,6 @@ func MailLoop(b *base.Base) error { // nolint[funlen]
 		builder,
 		b.CM,
 		b.Creds,
-		b.Autostart,
 	)
 	imapBackend := imap.NewIMAPBackend(b.Listener, b.Cache, b.Settings, bridge)
 	smtpBackend := smtp.NewSMTPBackend(b.Listener, b.Settings, bridge)

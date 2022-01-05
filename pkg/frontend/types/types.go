@@ -71,9 +71,6 @@ type Bridger interface {
 	GetKeychainApp() string
 	SetKeychainApp(keychain string)
 	HasError(err error) bool
-	IsAutostartEnabled() bool
-	EnableAutostart() error
-	DisableAutostart() error
 	GetLastVersion() string
 	IsFirstStart() bool
 }

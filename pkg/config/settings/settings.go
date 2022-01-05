@@ -35,7 +35,6 @@ const (
 	SMTPPortKey            = "user_port_smtp"
 	SMTPSSLKey             = "user_ssl_smtp"
 	AllowProxyKey          = "allow_proxy"
-	AutostartKey           = "autostart"
 	AutoUpdateKey          = "autoupdate"
 	CookiesKey             = "cookies"
 	ReportOutgoingNoEncKey = "report_outgoing_email_without_encryption"
@@ -83,7 +82,6 @@ func (s *Settings) setDefaultValues() {
 	s.setDefault(FirstStartGUIKey, "true")
 	s.setDefault(LastHeartbeatKey, fmt.Sprintf("%v", time.Now().YearDay()))
 	s.setDefault(AllowProxyKey, "true")
-	s.setDefault(AutostartKey, "true")
 	s.setDefault(AutoUpdateKey, "true")
 	s.setDefault(ReportOutgoingNoEncKey, "false")
 	s.setDefault(LastVersionKey, "")
