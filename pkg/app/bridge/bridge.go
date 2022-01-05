@@ -109,19 +109,12 @@ func MailLoop(b *base.Base) error { // nolint[funlen]
 	}()
 
 	f := frontend.New(
-		constants.Version,
-		constants.BuildVersion,
-		b.Name,
-		"cli",
-		false,
 		b.CrashHandler,
 		b.Locations,
 		b.Settings,
 		b.Listener,
 		b.Updater,
-		b.UserAgent,
 		bridge,
-		smtpBackend,
 		b,
 	)
 

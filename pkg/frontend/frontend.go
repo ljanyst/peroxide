@@ -21,13 +21,11 @@ package frontend
 import (
 	"github.com/ljanyst/peroxide/pkg/bridge"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
-	"github.com/ljanyst/peroxide/pkg/config/useragent"
 	"github.com/ljanyst/peroxide/pkg/frontend/cli"
-	"github.com/ljanyst/peroxide/pkg/frontend/qt"
 	"github.com/ljanyst/peroxide/pkg/frontend/types"
+	"github.com/ljanyst/peroxide/pkg/listener"
 	"github.com/ljanyst/peroxide/pkg/locations"
 	"github.com/ljanyst/peroxide/pkg/updater"
-	"github.com/ljanyst/peroxide/pkg/listener"
 )
 
 type Frontend interface {
@@ -41,50 +39,23 @@ type Frontend interface {
 
 // New returns initialized frontend based on `frontendType`, which can be `cli` or `qt`.
 func New(
-	version,
-	buildVersion,
-	programName,
-	frontendType string,
-	showWindowOnStart bool,
 	panicHandler types.PanicHandler,
 	locations *locations.Locations,
 	settings *settings.Settings,
 	eventListener listener.Listener,
 	updater types.Updater,
-	userAgent *useragent.UserAgent,
 	bridge *bridge.Bridge,
-	noEncConfirmator types.NoEncConfirmator,
 	restarter types.Restarter,
 ) Frontend {
 	bridgeWrap := types.NewBridgeWrap(bridge)
-	switch frontendType {
-	case "qt":
-		return qt.New(
-			version,
-			buildVersion,
-			programName,
-			showWindowOnStart,
-			panicHandler,
-			locations,
-			settings,
-			eventListener,
-			updater,
-			userAgent,
-			bridgeWrap,
-			noEncConfirmator,
-			restarter,
-		)
-	case "cli":
-		return cli.New(
-			panicHandler,
-			locations,
-			settings,
-			eventListener,
-			updater,
-			bridgeWrap,
-			restarter,
-		)
-	default:
-		return nil
-	}
+	return cli.New(
+		panicHandler,
+		locations,
+		settings,
+		eventListener,
+		updater,
+		bridgeWrap,
+		restarter,
+	)
+
 }
