@@ -82,6 +82,7 @@ func (j *Jar) SetCookies(u *url.URL, cookies []*http.Cookie) {
 	}
 
 	j.cookies[fmt.Sprintf("%v://%v", u.Scheme, u.Host)] = cookies
+	j.PersistCookies()
 }
 
 func (j *Jar) Cookies(u *url.URL) []*http.Cookie {

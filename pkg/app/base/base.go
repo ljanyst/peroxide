@@ -33,7 +33,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"runtime/pprof"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
@@ -58,22 +57,6 @@ import (
 	"github.com/ljanyst/peroxide/pkg/users/credentials"
 	"github.com/ljanyst/peroxide/pkg/versioner"
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli/v2"
-)
-
-const (
-	flagCPUProfile      = "cpu-prof"
-	flagCPUProfileShort = "p"
-	flagMemProfile      = "mem-prof"
-	flagMemProfileShort = "m"
-	flagLogLevel        = "log-level"
-	flagLogLevelShort   = "l"
-	// FlagCLI indicate to start with command line interface.
-	FlagCLI      = "cli"
-	flagCLIShort = "c"
-	flagRestart  = "restart"
-	FlagLauncher = "launcher"
-	FlagNoWindow = "no-window"
 )
 
 type Base struct {
@@ -230,7 +213,7 @@ func New( // nolint[funlen]
 	autostart := &autostart.App{
 		Name:        appName,
 		DisplayName: appName,
-		Exec:        []string{exe, "--" + FlagNoWindow},
+		Exec:        []string{exe},
 	}
 
 	return &Base{
@@ -258,132 +241,7 @@ func New( // nolint[funlen]
 	}, nil
 }
 
-func (b *Base) NewApp(mainLoop func(*Base, *cli.Context) error) *cli.App {
-	app := cli.NewApp()
-
-	app.Name = b.Name
-	app.Usage = b.usage
-	app.Version = constants.Version
-	app.Action = b.wrapMainLoop(mainLoop)
-	app.Flags = []cli.Flag{
-		&cli.BoolFlag{
-			Name:    flagCPUProfile,
-			Aliases: []string{flagCPUProfileShort},
-			Usage:   "Generate CPU profile",
-		},
-		&cli.BoolFlag{
-			Name:    flagMemProfile,
-			Aliases: []string{flagMemProfileShort},
-			Usage:   "Generate memory profile",
-		},
-		&cli.StringFlag{
-			Name:    flagLogLevel,
-			Aliases: []string{flagLogLevelShort},
-			Usage:   "Set the log level (one of panic, fatal, error, warn, info, debug)",
-		},
-		&cli.BoolFlag{
-			Name:    FlagCLI,
-			Aliases: []string{flagCLIShort},
-			Usage:   "Use command line interface",
-		},
-		&cli.BoolFlag{
-			Name:  FlagNoWindow,
-			Usage: "Don't show window after start",
-		},
-		&cli.StringFlag{
-			Name:   flagRestart,
-			Usage:  "The number of times the application has already restarted",
-			Hidden: true,
-		},
-		&cli.StringFlag{
-			Name:   FlagLauncher,
-			Usage:  "The launcher to use to restart the application",
-			Hidden: true,
-		},
-	}
-
-	return app
-}
-
 // SetToRestart sets the app to restart the next time it is closed.
 func (b *Base) SetToRestart() {
 	b.restart = true
-}
-
-// AddTeardownAction adds an action to perform during app teardown.
-func (b *Base) AddTeardownAction(fn func() error) {
-	b.teardown = append(b.teardown, fn)
-}
-
-func (b *Base) wrapMainLoop(appMainLoop func(*Base, *cli.Context) error) cli.ActionFunc { // nolint[funlen]
-	return func(c *cli.Context) error {
-		defer b.CrashHandler.HandlePanic()
-		defer func() { _ = b.Lock.Close() }()
-
-		// If launcher was used to start the app, use that for restart
-		// and autostart.
-		if launcher := c.String(FlagLauncher); launcher != "" {
-			b.command = launcher
-			// Bridge supports no-window option which we should use
-			// for autostart.
-			b.Autostart.Exec = []string{launcher, "--" + FlagNoWindow}
-		}
-
-		if c.Bool(flagCPUProfile) {
-			startCPUProfile()
-			defer pprof.StopCPUProfile()
-		}
-
-		if c.Bool(flagMemProfile) {
-			defer makeMemoryProfile()
-		}
-
-		logging.SetLevel(c.String(flagLogLevel))
-		b.CM.SetLogging(logrus.WithField("pkg", "pmapi"), logrus.GetLevel() == logrus.TraceLevel)
-
-		logrus.
-			WithField("appName", b.Name).
-			WithField("version", constants.Version).
-			WithField("revision", constants.Revision).
-			WithField("build", constants.BuildTime).
-			WithField("runtime", runtime.GOOS).
-			WithField("args", os.Args).
-			Info("Run app")
-
-		b.CrashHandler.AddRecoveryAction(func(interface{}) error {
-			if c.Int(flagRestart) > maxAllowedRestarts {
-				logrus.
-					WithField("restart", c.Int("restart")).
-					Warn("Not restarting, already restarted too many times")
-
-				return nil
-			}
-
-			return b.restartApp(true)
-		})
-
-		if err := appMainLoop(b, c); err != nil {
-			return err
-		}
-
-		if err := b.doTeardown(); err != nil {
-			return err
-		}
-
-		if b.restart {
-			return b.restartApp(false)
-		}
-
-		return nil
-	}
-}
-
-func (b *Base) doTeardown() error {
-	for _, action := range b.teardown {
-		if err := action(); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

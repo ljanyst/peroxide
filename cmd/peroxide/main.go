@@ -35,8 +35,6 @@ package main
 */
 
 import (
-	"os"
-
 	"github.com/ljanyst/peroxide/pkg/app/base"
 	"github.com/ljanyst/peroxide/pkg/app/bridge"
 	"github.com/sirupsen/logrus"
@@ -68,7 +66,7 @@ func main() {
 		return
 	}
 
-	if err := bridge.New(base).Run(os.Args); err != nil {
+	if bridge.MailLoop(base); err != nil {
 		logrus.WithError(err).Fatal("Bridge exited with error")
 	}
 }

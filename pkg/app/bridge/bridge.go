@@ -38,38 +38,15 @@ import (
 	"github.com/ljanyst/peroxide/pkg/updater"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli/v2"
 )
 
 const (
-	flagLogIMAP        = "log-imap"
-	flagLogSMTP        = "log-smtp"
-	flagNonInteractive = "noninteractive"
-
 	// Memory cache was estimated by empirical usage in past and it was set to 100MB.
 	// NOTE: This value must not be less than maximal size of one email (~30MB).
 	inMemoryCacheLimnit = 100 * (1 << 20)
 )
 
-func New(base *base.Base) *cli.App {
-	app := base.NewApp(mailLoop)
-
-	app.Flags = append(app.Flags, []cli.Flag{
-		&cli.StringFlag{
-			Name:  flagLogIMAP,
-			Usage: "Enable logging of IMAP communications (all|client|server) (may contain decrypted data!)"},
-		&cli.BoolFlag{
-			Name:  flagLogSMTP,
-			Usage: "Enable logging of SMTP communications (may contain decrypted data!)"},
-		&cli.BoolFlag{
-			Name:  flagNonInteractive,
-			Usage: "Start Bridge entirely noninteractively"},
-	}...)
-
-	return app
-}
-
-func mailLoop(b *base.Base, c *cli.Context) error { // nolint[funlen]
+func MailLoop(b *base.Base) error { // nolint[funlen]
 	tlsConfig, err := loadTLSConfig(b)
 	if err != nil {
 		return err
@@ -116,8 +93,8 @@ func mailLoop(b *base.Base, c *cli.Context) error { // nolint[funlen]
 		imapPort := b.Settings.GetInt(settings.IMAPPortKey)
 		imap.NewIMAPServer(
 			b.CrashHandler,
-			c.String(flagLogIMAP) == "client" || c.String(flagLogIMAP) == "all",
-			c.String(flagLogIMAP) == "server" || c.String(flagLogIMAP) == "all",
+			false, // log client
+			false, // log server
 			imapPort, tlsConfig, imapBackend, b.UserAgent, b.Listener).ListenAndServe()
 	}()
 
@@ -127,33 +104,16 @@ func mailLoop(b *base.Base, c *cli.Context) error { // nolint[funlen]
 		useSSL := b.Settings.GetBool(settings.SMTPSSLKey)
 		smtp.NewSMTPServer(
 			b.CrashHandler,
-			c.Bool(flagLogSMTP),
+			false,
 			smtpPort, useSSL, tlsConfig, smtpBackend, b.Listener).ListenAndServe()
 	}()
-
-	// We want to remove old versions if the app exits successfully.
-	b.AddTeardownAction(b.Versioner.RemoveOldVersions)
-
-	// We want cookies to be saved to disk so they are loaded the next time.
-	b.AddTeardownAction(b.CookieJar.PersistCookies)
-
-	var frontendMode string
-
-	switch {
-	case c.Bool(base.FlagCLI):
-		frontendMode = "cli"
-	case c.Bool(flagNonInteractive):
-		return <-(make(chan error)) // Block forever.
-	default:
-		frontendMode = "qt"
-	}
 
 	f := frontend.New(
 		constants.Version,
 		constants.BuildVersion,
 		b.Name,
-		frontendMode,
-		!c.Bool(base.FlagNoWindow),
+		"cli",
+		false,
 		b.CrashHandler,
 		b.Locations,
 		b.Settings,
