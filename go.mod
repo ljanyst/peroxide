@@ -11,7 +11,6 @@ require (
 )
 
 require (
-	github.com/0xAX/notificator v0.0.0-20191016112426-3962a5ea8da1
 	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/ProtonMail/go-autostart v0.0.0-20181114175602-c5272053443a
 	github.com/ProtonMail/go-crypto v0.0.0-20210707164159-52430bf6b52c
@@ -23,7 +22,6 @@ require (
 	github.com/PuerkitoBio/goquery v1.5.1
 	github.com/abiosoft/ishell v2.0.0+incompatible
 	github.com/abiosoft/readline v0.0.0-20180607040430-155bce2042db // indirect
-	github.com/allan-simon/go-singleinstance v0.0.0-20160830203053-79edcfdc2dfc
 	github.com/chzyer/logex v1.1.10 // indirect
 	github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 // indirect
 	github.com/cucumber/godog v0.12.1
@@ -42,6 +40,7 @@ require (
 	github.com/golang/mock v1.4.4
 	github.com/google/go-cmp v0.5.1
 	github.com/google/uuid v1.1.1
+	github.com/gopherjs/gopherjs v0.0.0-20190411002643-bd77b112433e // indirect
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/jaytaylor/html2text v0.0.0-20200412013138-3577fbdbcff7
 	github.com/kr/text v0.2.0 // indirect
@@ -55,7 +54,6 @@ require (
 	github.com/sirupsen/logrus v1.7.0
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/stretchr/testify v1.7.0
-	github.com/therecipe/qt v0.0.0-20200701200531-7f61353ee73e
 	github.com/vmihailenco/msgpack/v5 v5.1.3
 	go.etcd.io/bbolt v1.3.6
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2

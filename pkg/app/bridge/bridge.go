@@ -21,7 +21,6 @@ package bridge
 import (
 	"crypto/tls"
 
-	"github.com/ljanyst/peroxide/pkg/api"
 	"github.com/ljanyst/peroxide/pkg/app/base"
 	pkgBridge "github.com/ljanyst/peroxide/pkg/bridge"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
@@ -74,10 +73,6 @@ func MailLoop(b *base.Base) error { // nolint[funlen]
 	if cacheErr != nil {
 		bridge.AddError(pkgBridge.ErrLocalCacheUnavailable)
 	}
-
-	go func() {
-		api.NewAPIServer(b.Settings, b.Listener).ListenAndServe()
-	}()
 
 	go func() {
 		imapPort := b.Settings.GetInt(settings.IMAPPortKey)

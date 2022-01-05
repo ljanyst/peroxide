@@ -34,8 +34,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/allan-simon/go-singleinstance"
-	"github.com/ljanyst/peroxide/pkg/api"
 	"github.com/ljanyst/peroxide/pkg/config/cache"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
 	"github.com/ljanyst/peroxide/pkg/config/tls"
@@ -55,7 +53,6 @@ import (
 type Base struct {
 	Locations *locations.Locations
 	Settings  *settings.Settings
-	Lock      *os.File
 	Cache     *cache.Cache
 	Listener  listener.Listener
 	Creds     *credentials.Store
@@ -114,12 +111,6 @@ func New( // nolint[funlen]
 	}
 	settingsObj := settings.New(settingsPath)
 
-	lock, err := singleinstance.CreateLockFile(locations.GetLockFile())
-	if err != nil {
-		logrus.Warnf("%v is already running", appName)
-		return nil, api.CheckOtherInstanceAndFocus(settingsObj.GetInt(settings.APIPortKey))
-	}
-
 	cachePath, err := locations.ProvideCachePath()
 	if err != nil {
 		return nil, err
@@ -164,7 +155,6 @@ func New( // nolint[funlen]
 	return &Base{
 		Locations: locations,
 		Settings:  settingsObj,
-		Lock:      lock,
 		Cache:     cache,
 		Listener:  listener,
 		Creds:     credentials.NewStore(kc),
