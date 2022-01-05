@@ -20,22 +20,18 @@ package bridge
 
 import (
 	"crypto/tls"
-	"time"
 
 	"github.com/ljanyst/peroxide/pkg/api"
 	"github.com/ljanyst/peroxide/pkg/app/base"
 	pkgBridge "github.com/ljanyst/peroxide/pkg/bridge"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
 	pkgTLS "github.com/ljanyst/peroxide/pkg/config/tls"
-	"github.com/ljanyst/peroxide/pkg/constants"
 	"github.com/ljanyst/peroxide/pkg/frontend"
-	"github.com/ljanyst/peroxide/pkg/frontend/types"
 	"github.com/ljanyst/peroxide/pkg/imap"
 	"github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/smtp"
 	"github.com/ljanyst/peroxide/pkg/store"
 	"github.com/ljanyst/peroxide/pkg/store/cache"
-	"github.com/ljanyst/peroxide/pkg/updater"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -71,8 +67,6 @@ func MailLoop(b *base.Base) error { // nolint[funlen]
 		builder,
 		b.CM,
 		b.Creds,
-		b.Updater,
-		b.Versioner,
 		b.Autostart,
 	)
 	imapBackend := imap.NewIMAPBackend(b.Listener, b.Cache, b.Settings, bridge)
@@ -106,20 +100,9 @@ func MailLoop(b *base.Base) error { // nolint[funlen]
 		b.Locations,
 		b.Settings,
 		b.Listener,
-		b.Updater,
 		bridge,
 		b,
 	)
-
-	// Watch for updates routine
-	go func() {
-		ticker := time.NewTicker(constants.UpdateCheckInterval)
-
-		for {
-			checkAndHandleUpdate(b.Updater, f, b.Settings.GetBool(settings.AutoUpdateKey))
-			<-ticker.C
-		}
-	}()
 
 	return f.Loop()
 }
@@ -160,51 +143,6 @@ func generateTLSCerts(b *base.Base) error {
 	}
 
 	return nil
-}
-
-func checkAndHandleUpdate(u types.Updater, f frontend.Frontend, autoUpdate bool) {
-	log := logrus.WithField("pkg", "app/bridge")
-	version, err := u.Check()
-	if err != nil {
-		log.WithError(err).Error("An error occurred while checking for updates")
-		return
-	}
-
-	f.WaitUntilFrontendIsReady()
-
-	// Update links in UI
-	f.SetVersion(version)
-
-	if !u.IsUpdateApplicable(version) {
-		log.Info("No need to update")
-		return
-	}
-
-	log.WithField("version", version.Version).Info("An update is available")
-
-	if !autoUpdate {
-		f.NotifyManualUpdate(version, u.CanInstall(version))
-		return
-	}
-
-	if !u.CanInstall(version) {
-		log.Info("A manual update is required")
-		f.NotifySilentUpdateError(updater.ErrManualUpdateRequired)
-		return
-	}
-
-	if err := u.InstallUpdate(version); err != nil {
-		if errors.Cause(err) == updater.ErrDownloadVerify {
-			log.WithError(err).Warning("Skipping update installation due to temporary error")
-		} else {
-			log.WithError(err).Error("The update couldn't be installed")
-			f.NotifySilentUpdateError(err)
-		}
-
-		return
-	}
-
-	f.NotifySilentUpdateInstalled()
 }
 
 // loadMessageCache loads local cache in case it is enabled in settings and available.

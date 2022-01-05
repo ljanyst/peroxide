@@ -17,12 +17,6 @@
 
 package bridge
 
-import (
-	"github.com/Masterminds/semver/v3"
-
-	"github.com/ljanyst/peroxide/pkg/updater"
-)
-
 type Locator interface {
 	Clear() error
 	ClearUpdates() error
@@ -41,14 +35,4 @@ type SettingsProvider interface {
 	GetBool(key string) bool
 	SetBool(key string, val bool)
 	GetInt(key string) int
-}
-
-type Updater interface {
-	Check() (updater.VersionInfo, error)
-	IsDowngrade(updater.VersionInfo) bool
-	InstallUpdate(updater.VersionInfo) error
-}
-
-type Versioner interface {
-	RemoveOtherVersions(*semver.Version) error
 }

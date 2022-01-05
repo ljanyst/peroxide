@@ -24,7 +24,6 @@ import (
 	"github.com/ljanyst/peroxide/pkg/frontend/types"
 	"github.com/ljanyst/peroxide/pkg/listener"
 	"github.com/ljanyst/peroxide/pkg/locations"
-	"github.com/ljanyst/peroxide/pkg/updater"
 
 	"github.com/abiosoft/ishell"
 	"github.com/sirupsen/logrus"
@@ -40,7 +39,6 @@ type frontendCLI struct {
 	locations     *locations.Locations
 	settings      *settings.Settings
 	eventListener listener.Listener
-	updater       types.Updater
 	bridge        types.Bridger
 
 	restarter types.Restarter
@@ -51,7 +49,6 @@ func New( //nolint[funlen]
 	locations *locations.Locations,
 	settings *settings.Settings,
 	eventListener listener.Listener,
-	updater types.Updater,
 	bridge types.Bridger,
 	restarter types.Restarter,
 ) *frontendCLI { //nolint[golint]
@@ -61,7 +58,6 @@ func New( //nolint[funlen]
 		locations:     locations,
 		settings:      settings,
 		eventListener: eventListener,
-		updater:       updater,
 		bridge:        bridge,
 
 		restarter: restarter,
@@ -144,40 +140,6 @@ func New( //nolint[funlen]
 	})
 	fe.AddCmd(codCmd)
 
-	// Updates commands.
-	updatesCmd := &ishell.Cmd{Name: "updates",
-		Help: "manage bridge updates",
-	}
-	updatesCmd.AddCmd(&ishell.Cmd{Name: "check",
-		Help: "check for Bridge updates",
-		Func: fe.checkUpdates,
-	})
-	autoUpdatesCmd := &ishell.Cmd{Name: "autoupdates",
-		Help: "manage bridge updates",
-	}
-	updatesCmd.AddCmd(autoUpdatesCmd)
-	autoUpdatesCmd.AddCmd(&ishell.Cmd{Name: "enable",
-		Help: "automatically keep bridge up to date",
-		Func: fe.enableAutoUpdates,
-	})
-	autoUpdatesCmd.AddCmd(&ishell.Cmd{Name: "disable",
-		Help: "require bridge to be manually updated",
-		Func: fe.disableAutoUpdates,
-	})
-	updatesChannelCmd := &ishell.Cmd{Name: "channel",
-		Help: "switch updates channel",
-	}
-	updatesCmd.AddCmd(updatesChannelCmd)
-	updatesChannelCmd.AddCmd(&ishell.Cmd{Name: "early",
-		Help: "switch to the early-access updates channel",
-		Func: fe.selectEarlyChannel,
-	})
-	updatesChannelCmd.AddCmd(&ishell.Cmd{Name: "stable",
-		Help: "switch to the stable updates channel",
-		Func: fe.selectStableChannel,
-	})
-	fe.AddCmd(updatesCmd)
-
 	// Print info commands.
 	fe.AddCmd(&ishell.Cmd{Name: "log-dir",
 		Help:    "print path to directory with logs. (aliases: log, logs)",
@@ -188,11 +150,6 @@ func New( //nolint[funlen]
 		Help:    "print URL with instructions. (alias: man)",
 		Aliases: []string{"man"},
 		Func:    fe.printManual,
-	})
-
-	fe.AddCmd(&ishell.Cmd{Name: "credits",
-		Help: "print used resources.",
-		Func: fe.printCredits,
 	})
 
 	// Account commands.
@@ -296,11 +253,4 @@ func (f *frontendCLI) Loop() error {
 	return nil
 }
 
-func (f *frontendCLI) NotifyManualUpdate(update updater.VersionInfo, canInstall bool) {
-	// NOTE: Save the update somewhere so that it can be installed when user chooses "install now".
-}
-
-func (f *frontendCLI) WaitUntilFrontendIsReady()              {}
-func (f *frontendCLI) SetVersion(version updater.VersionInfo) {}
-func (f *frontendCLI) NotifySilentUpdateInstalled()           {}
-func (f *frontendCLI) NotifySilentUpdateError(err error)      {}
+func (f *frontendCLI) WaitUntilFrontendIsReady() {}

@@ -32,12 +32,9 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
-	"runtime"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/ProtonMail/go-autostart"
-	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"github.com/allan-simon/go-singleinstance"
 	"github.com/ljanyst/peroxide/pkg/api"
 	"github.com/ljanyst/peroxide/pkg/config/cache"
@@ -52,9 +49,7 @@ import (
 	"github.com/ljanyst/peroxide/pkg/locations"
 	"github.com/ljanyst/peroxide/pkg/logging"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
-	"github.com/ljanyst/peroxide/pkg/updater"
 	"github.com/ljanyst/peroxide/pkg/users/credentials"
-	"github.com/ljanyst/peroxide/pkg/versioner"
 	"github.com/sirupsen/logrus"
 )
 
@@ -68,8 +63,6 @@ type Base struct {
 	CM        pmapi.Manager
 	CookieJar *cookies.Jar
 	UserAgent *useragent.UserAgent
-	Updater   *updater.Updater
-	Versioner *versioner.Versioner
 	TLS       *tls.TLS
 	Autostart *autostart.App
 
@@ -170,33 +163,6 @@ func New( // nolint[funlen]
 
 	cm.SetCookieJar(jar)
 
-	key, err := crypto.NewKeyFromArmored(updater.DefaultPublicKey)
-	if err != nil {
-		return nil, err
-	}
-
-	kr, err := crypto.NewKeyRing(key)
-	if err != nil {
-		return nil, err
-	}
-
-	updatesDir, err := locations.ProvideUpdatesPath()
-	if err != nil {
-		return nil, err
-	}
-
-	versioner := versioner.New(updatesDir)
-	installer := updater.NewInstaller(versioner)
-	updater := updater.New(
-		cm,
-		installer,
-		settingsObj,
-		kr,
-		semver.MustParse(constants.Version),
-		updateURLName,
-		runtime.GOOS,
-	)
-
 	exe, err := os.Executable()
 	if err != nil {
 		return nil, err
@@ -218,8 +184,6 @@ func New( // nolint[funlen]
 		CM:        cm,
 		CookieJar: jar,
 		UserAgent: userAgent,
-		Updater:   updater,
-		Versioner: versioner,
 		TLS:       tls.New(settingsPath),
 		Autostart: autostart,
 

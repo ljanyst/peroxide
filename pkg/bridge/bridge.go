@@ -24,7 +24,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/ProtonMail/go-autostart"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
 	"github.com/ljanyst/peroxide/pkg/constants"
@@ -32,7 +31,6 @@ import (
 	"github.com/ljanyst/peroxide/pkg/metrics"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/ljanyst/peroxide/pkg/store/cache"
-	"github.com/ljanyst/peroxide/pkg/updater"
 	"github.com/ljanyst/peroxide/pkg/users"
 
 	"github.com/ljanyst/peroxide/pkg/listener"
@@ -49,8 +47,6 @@ type Bridge struct {
 	locations     Locator
 	settings      SettingsProvider
 	clientManager pmapi.Manager
-	updater       Updater
-	versioner     Versioner
 	cacheProvider CacheProvider
 	autostart     *autostart.App
 	// Bridge's global errors list.
@@ -69,8 +65,6 @@ func New(
 	builder *message.Builder,
 	clientManager pmapi.Manager,
 	credStorer users.CredentialsStorer,
-	updater Updater,
-	versioner Versioner,
 	autostart *autostart.App,
 ) *Bridge {
 	// Allow DoH before starting the app if the user has previously set this setting.
@@ -92,8 +86,6 @@ func New(
 		locations:     locations,
 		settings:      setting,
 		clientManager: clientManager,
-		updater:       updater,
-		versioner:     versioner,
 		cacheProvider: cacheProvider,
 		autostart:     autostart,
 		isFirstStart:  false,
@@ -144,53 +136,9 @@ func (b *Bridge) heartbeat() {
 	}
 }
 
-// GetUpdateChannel returns currently set update channel.
-func (b *Bridge) GetUpdateChannel() updater.UpdateChannel {
-	return updater.UpdateChannel(b.settings.Get(settings.UpdateChannelKey))
-}
-
-// SetUpdateChannel switches update channel.
-func (b *Bridge) SetUpdateChannel(channel updater.UpdateChannel) {
-	b.settings.Set(settings.UpdateChannelKey, string(channel))
-}
-
-func (b *Bridge) resetToLatestStable() error {
-	version, err := b.updater.Check()
-	if err != nil {
-		// If we can not check for updates - just remove all local updates and reset to base installer version.
-		// Not using `b.locations.ClearUpdates()` because `versioner.RemoveOtherVersions` can also handle
-		// case when it is needed to remove currently running verion.
-		if err := b.versioner.RemoveOtherVersions(semver.MustParse("0.0.0")); err != nil {
-			log.WithError(err).Error("Failed to clear updates while downgrading channel")
-		}
-		return nil
-	}
-
-	// If current version is same as upstream stable version - do nothing.
-	if version.Version.Equal(semver.MustParse(constants.Version)) {
-		return nil
-	}
-
-	if err := b.updater.InstallUpdate(version); err != nil {
-		return err
-	}
-
-	return b.versioner.RemoveOtherVersions(version.Version)
-}
-
 // FactoryReset will remove all local cache and settings.
 // It will also downgrade to latest stable version if user is on early version.
 func (b *Bridge) FactoryReset() {
-	wasEarly := b.GetUpdateChannel() == updater.EarlyChannel
-
-	b.settings.Set(settings.UpdateChannelKey, string(updater.StableChannel))
-
-	if wasEarly {
-		if err := b.resetToLatestStable(); err != nil {
-			log.WithError(err).Error("Failed to reset to latest stable version")
-		}
-	}
-
 	if err := b.Users.ClearData(); err != nil {
 		log.WithError(err).Error("Failed to remove bridge data")
 	}

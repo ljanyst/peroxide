@@ -25,16 +25,10 @@ import (
 	"github.com/ljanyst/peroxide/pkg/frontend/types"
 	"github.com/ljanyst/peroxide/pkg/listener"
 	"github.com/ljanyst/peroxide/pkg/locations"
-	"github.com/ljanyst/peroxide/pkg/updater"
 )
 
 type Frontend interface {
 	Loop() error
-	NotifyManualUpdate(update updater.VersionInfo, canInstall bool)
-	SetVersion(update updater.VersionInfo)
-	NotifySilentUpdateInstalled()
-	NotifySilentUpdateError(error)
-	WaitUntilFrontendIsReady()
 }
 
 // New returns initialized frontend based on `frontendType`, which can be `cli` or `qt`.
@@ -42,7 +36,6 @@ func New(
 	locations *locations.Locations,
 	settings *settings.Settings,
 	eventListener listener.Listener,
-	updater types.Updater,
 	bridge *bridge.Bridge,
 	restarter types.Restarter,
 ) Frontend {
@@ -51,9 +44,7 @@ func New(
 		locations,
 		settings,
 		eventListener,
-		updater,
 		bridgeWrap,
 		restarter,
 	)
-
 }

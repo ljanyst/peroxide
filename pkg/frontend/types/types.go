@@ -21,7 +21,6 @@ package types
 import (
 	"github.com/ljanyst/peroxide/pkg/bridge"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
-	"github.com/ljanyst/peroxide/pkg/updater"
 )
 
 // Restarter allows the app to set itself to restart next time it is closed.
@@ -31,13 +30,6 @@ type Restarter interface {
 
 type NoEncConfirmator interface {
 	ConfirmNoEncryption(string, bool)
-}
-
-type Updater interface {
-	Check() (updater.VersionInfo, error)
-	InstallUpdate(updater.VersionInfo) error
-	IsUpdateApplicable(updater.VersionInfo) bool
-	CanInstall(updater.VersionInfo) bool
 }
 
 // UserManager is an interface of users needed by frontend.
@@ -76,8 +68,6 @@ type Bridger interface {
 	EnableCache() error
 	DisableCache() error
 	MigrateCache(from, to string) error
-	GetUpdateChannel() updater.UpdateChannel
-	SetUpdateChannel(updater.UpdateChannel)
 	GetKeychainApp() string
 	SetKeychainApp(keychain string)
 	HasError(err error) bool

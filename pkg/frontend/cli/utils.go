@@ -20,8 +20,8 @@ package cli
 import (
 	"strings"
 
-	pmapi "github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/fatih/color"
+	pmapi "github.com/ljanyst/peroxide/pkg/pmapi"
 )
 
 const (
@@ -93,12 +93,7 @@ func (f *frontendCLI) notifyLogout(address string) {
 }
 
 func (f *frontendCLI) notifyNeedUpgrade() {
-	version, err := f.updater.Check()
-	if err != nil {
-		log.WithError(err).Error("Failed to notify need upgrade")
-		return
-	}
-	f.Println("Please download and install the newest version of application from", version.LandingPage)
+	f.Println("Application needs upgrade")
 }
 
 func (f *frontendCLI) notifyCredentialsError() { // nolint[unused]
