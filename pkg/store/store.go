@@ -120,7 +120,6 @@ func exposeContextForSMTP() context.Context {
 
 // Store is local user storage, which handles the synchronization between IMAP and PM API.
 type Store struct {
-	panicHandler  PanicHandler
 	user          BridgeUser
 	eventLoop     *eventLoop
 	currentEvents *Events
@@ -145,7 +144,6 @@ type Store struct {
 
 // New creates or opens a store for the given `user`.
 func New( // nolint[funlen]
-	panicHandler PanicHandler,
 	user BridgeUser,
 	listener listener.Listener,
 	cache cache.Cache,
@@ -174,7 +172,6 @@ func New( // nolint[funlen]
 	}
 
 	store = &Store{
-		panicHandler:  panicHandler,
 		user:          user,
 		currentEvents: currentEvents,
 
@@ -207,7 +204,6 @@ func New( // nolint[funlen]
 	if user.IsConnected() {
 		store.eventLoop = newEventLoop(currentEvents, store, user, listener)
 		go func() {
-			defer store.panicHandler.HandlePanic()
 			store.eventLoop.start()
 		}()
 	}

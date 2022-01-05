@@ -26,10 +26,6 @@ type Locator interface {
 	Clear() error
 }
 
-type PanicHandler interface {
-	HandlePanic()
-}
-
 type CredentialsStorer interface {
 	List() (userIDs []string, err error)
 	Add(userID, userName, uid, ref string, mailboxPassword []byte, emails []string) (*credentials.Credentials, error)

@@ -138,7 +138,6 @@ type mocksForStore struct {
 	events         *storemocks.MockListener
 	user           *storemocks.MockBridgeUser
 	client         *pmapimocks.MockClient
-	panicHandler   *storemocks.MockPanicHandler
 	changeNotifier *storemocks.MockChangeNotifier
 	store          *Store
 
@@ -154,12 +153,8 @@ func initMocks(tb testing.TB) (*mocksForStore, func()) {
 		events:         storemocks.NewMockListener(ctrl),
 		user:           storemocks.NewMockBridgeUser(ctrl),
 		client:         pmapimocks.NewMockClient(ctrl),
-		panicHandler:   storemocks.NewMockPanicHandler(ctrl),
 		changeNotifier: storemocks.NewMockChangeNotifier(ctrl),
 	}
-
-	// Called during clean-up.
-	mocks.panicHandler.EXPECT().HandlePanic().AnyTimes()
 
 	var err error
 	mocks.tmpDir, err = ioutil.TempDir("", "store-test")
@@ -214,7 +209,6 @@ func (mocks *mocksForStore) newStoreNoEvents(t *testing.T, combinedMode bool, ms
 
 	var err error
 	mocks.store, err = New(
-		mocks.panicHandler,
 		mocks.user,
 		mocks.events,
 		cache.NewInMemoryCache(1<<20),

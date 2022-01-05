@@ -124,8 +124,6 @@ func (store *Store) triggerSync() {
 
 	// We don't want sync to block.
 	go func() {
-		defer store.panicHandler.HandlePanic()
-
 		store.log.Debug("Store sync triggered")
 
 		store.lock.Lock()
@@ -153,7 +151,7 @@ func (store *Store) triggerSync() {
 
 		store.log.WithField("isIncomplete", syncState.isIncomplete()).Info("Store sync started")
 
-		err := syncAllMail(store.panicHandler, store, store.client(), syncState)
+		err := syncAllMail(store, store.client(), syncState)
 		if err != nil {
 			log.WithError(err).Error("Store sync failed")
 			store.syncCooldown.increaseWaitTime()

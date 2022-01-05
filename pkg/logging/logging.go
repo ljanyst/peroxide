@@ -61,11 +61,6 @@ func Init(logsPath string) error {
 	})
 
 	rotator, err := NewRotator(MaxLogSize, func() (io.WriteCloser, error) {
-		// Leaving MaxLogs-1 since new log file will be opened right away.
-		if err := clearLogs(logsPath, MaxLogs-1, MaxLogs); err != nil {
-			return nil, err
-		}
-
 		return os.Create(filepath.Join(logsPath, getLogName(constants.Version, constants.Revision)))
 	})
 	if err != nil {

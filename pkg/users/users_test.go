@@ -153,7 +153,6 @@ type mocks struct {
 
 	ctrl             *gomock.Controller
 	locator          *usersmocks.MockLocator
-	PanicHandler     *usersmocks.MockPanicHandler
 	credentialsStore *usersmocks.MockCredentialsStorer
 	storeMaker       *usersmocks.MockStoreMaker
 	eventListener    *usersmocks.MockListener
@@ -180,7 +179,6 @@ func initMocks(t *testing.T) mocks {
 
 		ctrl:             mockCtrl,
 		locator:          usersmocks.NewMockLocator(mockCtrl),
-		PanicHandler:     usersmocks.NewMockPanicHandler(mockCtrl),
 		credentialsStore: usersmocks.NewMockCredentialsStorer(mockCtrl),
 		storeMaker:       usersmocks.NewMockStoreMaker(mockCtrl),
 		eventListener:    usersmocks.NewMockListener(mockCtrl),
@@ -191,16 +189,12 @@ func initMocks(t *testing.T) mocks {
 		storeCache: store.NewEvents(cacheFile.Name()),
 	}
 
-	// Called during clean-up.
-	m.PanicHandler.EXPECT().HandlePanic().AnyTimes()
-
 	// Set up store factory.
 	m.storeMaker.EXPECT().New(gomock.Any()).DoAndReturn(func(user store.BridgeUser) (*store.Store, error) {
 		dbFile, err := ioutil.TempFile(t.TempDir(), "bridge-store-db-*.db")
 		r.NoError(t, err, "could not get temporary file for store db")
 
 		return store.New(
-			m.PanicHandler,
 			user,
 			m.eventListener,
 			cache.NewInMemoryCache(1<<20),
@@ -241,7 +235,7 @@ func testNewUsers(t *testing.T, m mocks) *Users { //nolint[unparam]
 	m.eventListener.EXPECT().ProvideChannel(events.UpgradeApplicationEvent)
 	m.eventListener.EXPECT().ProvideChannel(events.InternetOnEvent)
 
-	users := New(m.locator, m.PanicHandler, m.eventListener, m.clientManager, m.credentialsStore, m.storeMaker)
+	users := New(m.locator, m.eventListener, m.clientManager, m.credentialsStore, m.storeMaker)
 
 	waitForEvents()
 

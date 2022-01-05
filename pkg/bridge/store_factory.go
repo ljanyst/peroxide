@@ -25,12 +25,10 @@ import (
 	"github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/store"
 	"github.com/ljanyst/peroxide/pkg/store/cache"
-	"github.com/ljanyst/peroxide/pkg/users"
 )
 
 type storeFactory struct {
 	cacheProvider CacheProvider
-	panicHandler  users.PanicHandler
 	eventListener listener.Listener
 	events        *store.Events
 	cache         cache.Cache
@@ -39,14 +37,12 @@ type storeFactory struct {
 
 func newStoreFactory(
 	cacheProvider CacheProvider,
-	panicHandler users.PanicHandler,
 	eventListener listener.Listener,
 	cache cache.Cache,
 	builder *message.Builder,
 ) *storeFactory {
 	return &storeFactory{
 		cacheProvider: cacheProvider,
-		panicHandler:  panicHandler,
 		eventListener: eventListener,
 		events:        store.NewEvents(cacheProvider.GetIMAPCachePath()),
 		cache:         cache,
@@ -57,7 +53,6 @@ func newStoreFactory(
 // New creates new store for given user.
 func (f *storeFactory) New(user store.BridgeUser) (*store.Store, error) {
 	return store.New(
-		f.panicHandler,
 		user,
 		f.eventListener,
 		f.cache,

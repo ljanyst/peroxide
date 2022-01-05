@@ -22,9 +22,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ljanyst/peroxide/pkg/pmapi"
 	imapquota "github.com/emersion/go-imap-quota"
 	goIMAPBackend "github.com/emersion/go-imap/backend"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
 )
 
 var (
@@ -32,9 +32,8 @@ var (
 )
 
 type imapUser struct {
-	panicHandler panicHandler
-	backend      *imapBackend
-	user         bridgeUser
+	backend *imapBackend
+	user    bridgeUser
 
 	storeUser    storeUserProvider
 	storeAddress storeAddressProvider
@@ -61,7 +60,6 @@ type imapUser struct {
 
 // newIMAPUser returns struct implementing go-imap/user interface.
 func newIMAPUser(
-	panicHandler panicHandler,
 	backend *imapBackend,
 	user bridgeUser,
 	addressID, address string,
@@ -80,9 +78,8 @@ func newIMAPUser(
 	}
 
 	return &imapUser{
-		panicHandler: panicHandler,
-		backend:      backend,
-		user:         user,
+		backend: backend,
+		user:    user,
 
 		storeUser:    storeUser,
 		storeAddress: storeAddress,
@@ -118,24 +115,18 @@ func (iu *imapUser) addToCache(label, value string) {
 
 // Username returns this user's username.
 func (iu *imapUser) Username() string {
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer iu.panicHandler.HandlePanic()
-
 	return iu.storeAddress.AddressString()
 }
 
 // ListMailboxes returns a list of mailboxes belonging to this user.
 // If subscribed is set to true, returns only subscribed mailboxes.
 func (iu *imapUser) ListMailboxes(showOnlySubcribed bool) ([]goIMAPBackend.Mailbox, error) {
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer iu.panicHandler.HandlePanic()
-
 	mailboxes := []goIMAPBackend.Mailbox{}
 	for _, storeMailbox := range iu.storeAddress.ListMailboxes() {
 		if showOnlySubcribed && !iu.isSubscribed(storeMailbox.LabelID()) {
 			continue
 		}
-		mailbox := newIMAPMailbox(iu.panicHandler, iu, storeMailbox)
+		mailbox := newIMAPMailbox(iu, storeMailbox)
 		mailboxes = append(mailboxes, mailbox)
 	}
 
@@ -149,9 +140,6 @@ func (iu *imapUser) ListMailboxes(showOnlySubcribed bool) ([]goIMAPBackend.Mailb
 
 // GetMailbox returns a mailbox. If it doesn't exist, it returns ErrNoSuchMailbox.
 func (iu *imapUser) GetMailbox(name string) (mb goIMAPBackend.Mailbox, err error) {
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer iu.panicHandler.HandlePanic()
-
 	storeMailbox, err := iu.storeAddress.GetMailbox(name)
 	if err != nil {
 		logMsg := log.WithField("name", name).WithError(err)
@@ -167,22 +155,16 @@ func (iu *imapUser) GetMailbox(name string) (mb goIMAPBackend.Mailbox, err error
 		return
 	}
 
-	return newIMAPMailbox(iu.panicHandler, iu, storeMailbox), nil
+	return newIMAPMailbox(iu, storeMailbox), nil
 }
 
 // CreateMailbox creates a new mailbox.
 func (iu *imapUser) CreateMailbox(name string) error {
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer iu.panicHandler.HandlePanic()
-
 	return iu.storeAddress.CreateMailbox(name)
 }
 
 // DeleteMailbox permanently removes the mailbox with the given name.
 func (iu *imapUser) DeleteMailbox(name string) (err error) {
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer iu.panicHandler.HandlePanic()
-
 	storeMailbox, err := iu.storeAddress.GetMailbox(name)
 	if err != nil {
 		log.WithField("name", name).WithError(err).Error("Could not get mailbox")
@@ -196,9 +178,6 @@ func (iu *imapUser) DeleteMailbox(name string) (err error) {
 // rename a mailbox that does not exist or to rename a mailbox to a name that
 // already exists.
 func (iu *imapUser) RenameMailbox(oldName, newName string) (err error) {
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer iu.panicHandler.HandlePanic()
-
 	storeMailbox, err := iu.storeAddress.GetMailbox(oldName)
 	if err != nil {
 		log.WithField("name", oldName).WithError(err).Error("Could not get mailbox")
@@ -211,9 +190,6 @@ func (iu *imapUser) RenameMailbox(oldName, newName string) (err error) {
 // Logout is called when this User will no longer be used, likely because the
 // client closed the connection.
 func (iu *imapUser) Logout() (err error) {
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer iu.panicHandler.HandlePanic()
-
 	log.Debug("IMAP client logged out address ", iu.storeAddress.AddressID())
 
 	iu.backend.deleteUser(iu.currentAddressLowercase)
@@ -222,9 +198,6 @@ func (iu *imapUser) Logout() (err error) {
 }
 
 func (iu *imapUser) GetQuota(name string) (*imapquota.Status, error) {
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer iu.panicHandler.HandlePanic()
-
 	usedSpace, maxSpace, err := iu.storeUser.GetSpaceKB()
 	if err != nil {
 		log.Error("Failed getting quota: ", err)
@@ -245,16 +218,10 @@ func (iu *imapUser) GetQuota(name string) (*imapquota.Status, error) {
 }
 
 func (iu *imapUser) SetQuota(name string, resources map[string]uint32) error {
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer iu.panicHandler.HandlePanic()
-
 	return errors.New("quota cannot be set")
 }
 
 func (iu *imapUser) CreateMessageLimit() *uint32 {
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer iu.panicHandler.HandlePanic()
-
 	maxUpload, err := iu.storeUser.GetMaxUpload()
 	if err != nil {
 		log.Error("Failed getting current user for message limit: ", err)

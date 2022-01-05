@@ -24,11 +24,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/emersion/go-imap"
 	"github.com/ljanyst/peroxide/pkg/imap/uidplus"
 	"github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/parallel"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
-	"github.com/emersion/go-imap"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -48,9 +48,6 @@ func (im *imapMailbox) updateMessagesFlags(uid bool, seqSet *imap.SeqSet, operat
 		"flags":     flags,
 		"operation": operation,
 	}).Debug("Updating message flags")
-
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer im.panicHandler.HandlePanic()
 
 	im.user.backend.updates.block(im.user.currentAddressLowercase, im.name, operationUpdateMessage)
 	defer im.user.backend.updates.unblock(im.user.currentAddressLowercase, im.name, operationUpdateMessage)
@@ -230,9 +227,6 @@ func (im *imapMailbox) CopyMessages(uid bool, seqSet *imap.SeqSet, targetLabel s
 }
 
 func (im *imapMailbox) copyMessages(uid bool, seqSet *imap.SeqSet, targetLabel string) error {
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer im.panicHandler.HandlePanic()
-
 	return im.labelMessages(uid, seqSet, targetLabel, false)
 }
 
@@ -247,9 +241,6 @@ func (im *imapMailbox) MoveMessages(uid bool, seqSet *imap.SeqSet, targetLabel s
 }
 
 func (im *imapMailbox) moveMessages(uid bool, seqSet *imap.SeqSet, targetLabel string) error {
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer im.panicHandler.HandlePanic()
-
 	// Moving from All Mail is not allowed.
 	if im.storeMailbox.LabelID() == pmapi.AllMailLabel {
 		return errors.New("move from All Mail is not allowed")
@@ -333,9 +324,6 @@ func (im *imapMailbox) labelMessages(uid bool, seqSet *imap.SeqSet, targetLabel 
 // SearchMessages searches messages. The returned list must contain UIDs if
 // uid is set to true, or sequence numbers otherwise.
 func (im *imapMailbox) SearchMessages(isUID bool, criteria *imap.SearchCriteria) (ids []uint32, err error) { //nolint[gocyclo]
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer im.panicHandler.HandlePanic()
-
 	if criteria.Not != nil || criteria.Or != nil {
 		return nil, errors.New("unsupported search query")
 	}
@@ -529,8 +517,6 @@ func (im *imapMailbox) listMessages(isUID bool, seqSet *imap.SeqSet, items []ima
 		if err != nil {
 			log.Errorf("cannot list messages (%v, %v, %v): %v", isUID, seqSet, items, err)
 		}
-		// Called from go-imap in goroutines - we need to handle panics for each function.
-		im.panicHandler.HandlePanic()
 	}()
 
 	if !isUID {

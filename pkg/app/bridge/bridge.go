@@ -66,7 +66,6 @@ func MailLoop(b *base.Base) error { // nolint[funlen]
 		b.Locations,
 		b.Cache,
 		b.Settings,
-		b.CrashHandler,
 		b.Listener,
 		cache,
 		builder,
@@ -76,40 +75,34 @@ func MailLoop(b *base.Base) error { // nolint[funlen]
 		b.Versioner,
 		b.Autostart,
 	)
-	imapBackend := imap.NewIMAPBackend(b.CrashHandler, b.Listener, b.Cache, b.Settings, bridge)
-	smtpBackend := smtp.NewSMTPBackend(b.CrashHandler, b.Listener, b.Settings, bridge)
+	imapBackend := imap.NewIMAPBackend(b.Listener, b.Cache, b.Settings, bridge)
+	smtpBackend := smtp.NewSMTPBackend(b.Listener, b.Settings, bridge)
 
 	if cacheErr != nil {
 		bridge.AddError(pkgBridge.ErrLocalCacheUnavailable)
 	}
 
 	go func() {
-		defer b.CrashHandler.HandlePanic()
 		api.NewAPIServer(b.Settings, b.Listener).ListenAndServe()
 	}()
 
 	go func() {
-		defer b.CrashHandler.HandlePanic()
 		imapPort := b.Settings.GetInt(settings.IMAPPortKey)
 		imap.NewIMAPServer(
-			b.CrashHandler,
 			false, // log client
 			false, // log server
 			imapPort, tlsConfig, imapBackend, b.UserAgent, b.Listener).ListenAndServe()
 	}()
 
 	go func() {
-		defer b.CrashHandler.HandlePanic()
 		smtpPort := b.Settings.GetInt(settings.SMTPPortKey)
 		useSSL := b.Settings.GetBool(settings.SMTPSSLKey)
 		smtp.NewSMTPServer(
-			b.CrashHandler,
 			false,
 			smtpPort, useSSL, tlsConfig, smtpBackend, b.Listener).ListenAndServe()
 	}()
 
 	f := frontend.New(
-		b.CrashHandler,
 		b.Locations,
 		b.Settings,
 		b.Listener,

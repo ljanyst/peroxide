@@ -46,7 +46,6 @@ import (
 	"github.com/ljanyst/peroxide/pkg/config/useragent"
 	"github.com/ljanyst/peroxide/pkg/constants"
 	"github.com/ljanyst/peroxide/pkg/cookies"
-	"github.com/ljanyst/peroxide/pkg/crash"
 	"github.com/ljanyst/peroxide/pkg/events"
 	"github.com/ljanyst/peroxide/pkg/keychain"
 	"github.com/ljanyst/peroxide/pkg/listener"
@@ -60,20 +59,19 @@ import (
 )
 
 type Base struct {
-	CrashHandler *crash.Handler
-	Locations    *locations.Locations
-	Settings     *settings.Settings
-	Lock         *os.File
-	Cache        *cache.Cache
-	Listener     listener.Listener
-	Creds        *credentials.Store
-	CM           pmapi.Manager
-	CookieJar    *cookies.Jar
-	UserAgent    *useragent.UserAgent
-	Updater      *updater.Updater
-	Versioner    *versioner.Versioner
-	TLS          *tls.TLS
-	Autostart    *autostart.App
+	Locations *locations.Locations
+	Settings  *settings.Settings
+	Lock      *os.File
+	Cache     *cache.Cache
+	Listener  listener.Listener
+	Creds     *credentials.Store
+	CM        pmapi.Manager
+	CookieJar *cookies.Jar
+	UserAgent *useragent.UserAgent
+	Updater   *updater.Updater
+	Versioner *versioner.Versioner
+	TLS       *tls.TLS
+	Autostart *autostart.App
 
 	Name    string // the app's name
 	usage   string // the app's usage description
@@ -93,11 +91,6 @@ func New( // nolint[funlen]
 ) (*Base, error) {
 	userAgent := useragent.New()
 
-	crashHandler := crash.NewHandler(
-		crash.ShowErrorNotification(appName),
-	)
-	defer crashHandler.HandlePanic()
-
 	rand.Seed(time.Now().UnixNano())
 	os.Args = StripProcessSerialNumber(os.Args)
 
@@ -115,7 +108,6 @@ func New( // nolint[funlen]
 	if err := logging.Init(logsPath); err != nil {
 		return nil, err
 	}
-	crashHandler.AddRecoveryAction(logging.DumpStackTrace(logsPath))
 
 	if err := migrateFiles(configName); err != nil {
 		logrus.WithError(err).Warn("Old config files could not be migrated")
@@ -217,20 +209,19 @@ func New( // nolint[funlen]
 	}
 
 	return &Base{
-		CrashHandler: crashHandler,
-		Locations:    locations,
-		Settings:     settingsObj,
-		Lock:         lock,
-		Cache:        cache,
-		Listener:     listener,
-		Creds:        credentials.NewStore(kc),
-		CM:           cm,
-		CookieJar:    jar,
-		UserAgent:    userAgent,
-		Updater:      updater,
-		Versioner:    versioner,
-		TLS:          tls.New(settingsPath),
-		Autostart:    autostart,
+		Locations: locations,
+		Settings:  settingsObj,
+		Lock:      lock,
+		Cache:     cache,
+		Listener:  listener,
+		Creds:     credentials.NewStore(kc),
+		CM:        cm,
+		CookieJar: jar,
+		UserAgent: userAgent,
+		Updater:   updater,
+		Versioner: versioner,
+		TLS:       tls.New(settingsPath),
+		Autostart: autostart,
 
 		Name:  appName,
 		usage: appUsage,

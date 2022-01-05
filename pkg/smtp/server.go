@@ -23,21 +23,20 @@ import (
 	"io"
 	"net"
 
-	"github.com/ljanyst/peroxide/pkg/bridge"
-	"github.com/ljanyst/peroxide/pkg/serverutil"
-	"github.com/ljanyst/peroxide/pkg/listener"
 	"github.com/emersion/go-sasl"
 	goSMTP "github.com/emersion/go-smtp"
+	"github.com/ljanyst/peroxide/pkg/bridge"
+	"github.com/ljanyst/peroxide/pkg/listener"
+	"github.com/ljanyst/peroxide/pkg/serverutil"
 )
 
 // Server is Bridge SMTP server implementation.
 type Server struct {
-	panicHandler panicHandler
-	backend      goSMTP.Backend
-	debug        bool
-	useSSL       bool
-	port         int
-	tls          *tls.Config
+	backend goSMTP.Backend
+	debug   bool
+	useSSL  bool
+	port    int
+	tls     *tls.Config
 
 	server     *goSMTP.Server
 	controller serverutil.Controller
@@ -45,19 +44,17 @@ type Server struct {
 
 // NewSMTPServer returns an SMTP server configured with the given options.
 func NewSMTPServer(
-	panicHandler panicHandler,
 	debug bool, port int, useSSL bool,
 	tls *tls.Config,
 	smtpBackend goSMTP.Backend,
 	eventListener listener.Listener,
 ) *Server {
 	server := &Server{
-		panicHandler: panicHandler,
-		backend:      smtpBackend,
-		debug:        debug,
-		useSSL:       useSSL,
-		port:         port,
-		tls:          tls,
+		backend: smtpBackend,
+		debug:   debug,
+		useSSL:  useSSL,
+		port:    port,
+		tls:     tls,
 	}
 
 	server.server = newGoSMTPServer(server)
@@ -100,7 +97,6 @@ func (Server) Protocol() serverutil.Protocol { return serverutil.SMTP }
 func (s *Server) UseSSL() bool               { return s.useSSL }
 func (s *Server) Address() string            { return fmt.Sprintf("%s:%d", bridge.Host, s.port) }
 func (s *Server) TLSConfig() *tls.Config     { return s.tls }
-func (s *Server) HandlePanic()               { s.panicHandler.HandlePanic() }
 
 func (s *Server) DebugServer() bool { return s.debug }
 func (s *Server) DebugClient() bool { return s.debug }

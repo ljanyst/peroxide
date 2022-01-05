@@ -29,7 +29,7 @@ func testNewUser(t *testing.T, m mocks) *User {
 	mockInitConnectedUser(t, m)
 	mockEventLoopNoAction(m)
 
-	user, creds, err := newUser(m.PanicHandler, "user", m.eventListener, m.credentialsStore, m.storeMaker)
+	user, creds, err := newUser("user", m.eventListener, m.credentialsStore, m.storeMaker)
 	r.NoError(m.t, err)
 
 	err = user.connect(m.pmapiClient, creds)

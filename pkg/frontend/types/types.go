@@ -20,14 +20,9 @@ package types
 
 import (
 	"github.com/ljanyst/peroxide/pkg/bridge"
-	"github.com/ljanyst/peroxide/pkg/updater"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/updater"
 )
-
-// PanicHandler is an interface of a type that can be used to gracefully handle panics which occur.
-type PanicHandler interface {
-	HandlePanic()
-}
 
 // Restarter allows the app to set itself to restart next time it is closed.
 type Restarter interface {
@@ -76,7 +71,6 @@ type User interface {
 type Bridger interface {
 	UserManager
 
-	ReportBug(osType, osVersion, description, accountName, address, emailClient string, attachLogs bool) error
 	SetProxyAllowed(bool)
 	GetProxyAllowed() bool
 	EnableCache() error

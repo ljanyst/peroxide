@@ -21,9 +21,9 @@ import (
 	"context"
 	"testing"
 
+	gomock "github.com/golang/mock/gomock"
 	"github.com/ljanyst/peroxide/pkg/events"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
-	gomock "github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	r "github.com/stretchr/testify/require"
 )
@@ -177,7 +177,7 @@ func TestCheckBridgeLoginLoggedOut(t *testing.T) {
 		m.eventListener.EXPECT().Emit(events.LogoutEvent, "user"),
 	)
 
-	user, _, err := newUser(m.PanicHandler, "user", m.eventListener, m.credentialsStore, m.storeMaker)
+	user, _, err := newUser("user", m.eventListener, m.credentialsStore, m.storeMaker)
 	r.NoError(t, err)
 
 	err = user.connect(m.pmapiClient, testCredentialsDisconnected)

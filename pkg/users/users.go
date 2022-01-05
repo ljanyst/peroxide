@@ -24,12 +24,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ljanyst/peroxide/pkg/events"
-	"github.com/ljanyst/peroxide/pkg/metrics"
-	"github.com/ljanyst/peroxide/pkg/users/credentials"
-	"github.com/ljanyst/peroxide/pkg/listener"
-	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/hashicorp/go-multierror"
+	"github.com/ljanyst/peroxide/pkg/events"
+	"github.com/ljanyst/peroxide/pkg/listener"
+	"github.com/ljanyst/peroxide/pkg/metrics"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/users/credentials"
 	"github.com/pkg/errors"
 	logrus "github.com/sirupsen/logrus"
 )
@@ -50,7 +50,6 @@ var (
 // Users is a struct handling users.
 type Users struct {
 	locations     Locator
-	panicHandler  PanicHandler
 	events        listener.Listener
 	clientManager pmapi.Manager
 	credStorer    CredentialsStorer
@@ -67,7 +66,6 @@ type Users struct {
 
 func New(
 	locations Locator,
-	panicHandler PanicHandler,
 	eventListener listener.Listener,
 	clientManager pmapi.Manager,
 	credStorer CredentialsStorer,
@@ -77,7 +75,6 @@ func New(
 
 	u := &Users{
 		locations:     locations,
-		panicHandler:  panicHandler,
 		events:        eventListener,
 		clientManager: clientManager,
 		credStorer:    credStorer,
@@ -86,7 +83,6 @@ func New(
 	}
 
 	go func() {
-		defer panicHandler.HandlePanic()
 		u.watchEvents()
 	}()
 
@@ -135,7 +131,7 @@ func (u *Users) loadUsersFromCredentialsStore() error {
 
 	for _, userID := range userIDs {
 		l := log.WithField("user", userID)
-		user, creds, err := newUser(u.panicHandler, userID, u.events, u.credStorer, u.storeFactory)
+		user, creds, err := newUser(userID, u.events, u.credStorer, u.storeFactory)
 		if err != nil {
 			l.WithError(err).Warn("Could not create user, skipping")
 			continue
@@ -261,7 +257,7 @@ func (u *Users) addNewUser(client pmapi.Client, apiUser *pmapi.User, auth *pmapi
 		return errors.Wrap(err, "failed to add user credentials to credentials store")
 	}
 
-	user, creds, err := newUser(u.panicHandler, apiUser.ID, u.events, u.credStorer, u.storeFactory)
+	user, creds, err := newUser(apiUser.ID, u.events, u.credStorer, u.storeFactory)
 	if err != nil {
 		return errors.Wrap(err, "failed to create new user")
 	}

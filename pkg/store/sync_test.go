@@ -155,9 +155,6 @@ func generateIDsR(start, stop int) []string {
 // Tests
 
 func TestSyncAllMail(t *testing.T) { //nolint[funlen]
-	m, clear := initMocks(t)
-	defer clear()
-
 	numberOfMessages := 10000
 
 	api := &mockLister{
@@ -198,7 +195,7 @@ func TestSyncAllMail(t *testing.T) { //nolint[funlen]
 
 			syncState := newSyncState(store, 0, tc.idRanges, tc.idsToBeDeleted)
 
-			err := syncAllMail(m.panicHandler, store, api, syncState)
+			err := syncAllMail(store, api, syncState)
 			require.Nil(t, err)
 
 			// Check all messages were created or updated.
@@ -232,9 +229,6 @@ func mergeArrays(arrays ...[]string) []string {
 }
 
 func TestSyncAllMail_FailedListing(t *testing.T) {
-	m, clear := initMocks(t)
-	defer clear()
-
 	numberOfMessages := 10000
 
 	store := newSyncer()
@@ -246,14 +240,11 @@ func TestSyncAllMail_FailedListing(t *testing.T) {
 	}
 	syncState := newTestSyncState(store)
 
-	err := syncAllMail(m.panicHandler, store, api, syncState)
+	err := syncAllMail(store, api, syncState)
 	require.EqualError(t, err, "failed to sync group: failed to list messages: error")
 }
 
 func TestSyncAllMail_FailedCreateOrUpdateMessage(t *testing.T) {
-	m, clear := initMocks(t)
-	defer clear()
-
 	numberOfMessages := 10000
 
 	store := newSyncer()
@@ -265,7 +256,7 @@ func TestSyncAllMail_FailedCreateOrUpdateMessage(t *testing.T) {
 	}
 	syncState := newTestSyncState(store)
 
-	err := syncAllMail(m.panicHandler, store, api, syncState)
+	err := syncAllMail(store, api, syncState)
 	require.EqualError(t, err, "failed to sync group: failed to create or update messages: error")
 }
 

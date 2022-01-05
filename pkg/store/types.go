@@ -23,10 +23,6 @@ import (
 	"github.com/ljanyst/peroxide/pkg/pmapi"
 )
 
-type PanicHandler interface {
-	HandlePanic()
-}
-
 // BridgeUser is subset of bridge.User for use by the Store.
 type BridgeUser interface {
 	ID() string

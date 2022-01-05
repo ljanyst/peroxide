@@ -27,11 +27,11 @@ import (
 	"time"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
+	"github.com/emersion/go-imap"
+	"github.com/emersion/go-message/textproto"
 	"github.com/ljanyst/peroxide/pkg/imap/uidplus"
 	"github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
-	"github.com/emersion/go-imap"
-	"github.com/emersion/go-message/textproto"
 	"github.com/pkg/errors"
 )
 
@@ -48,9 +48,6 @@ func (im *imapMailbox) CreateMessage(flags []string, date time.Time, body imap.L
 }
 
 func (im *imapMailbox) createMessage(imapFlags []string, date time.Time, r imap.Literal) error { //nolint[funlen]
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer im.panicHandler.HandlePanic()
-
 	// NOTE: Is this lock meant to be here?
 	im.user.appendExpungeLock.Lock()
 	defer im.user.appendExpungeLock.Unlock()

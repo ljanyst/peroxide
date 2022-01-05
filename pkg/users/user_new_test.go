@@ -21,9 +21,9 @@ import (
 	"errors"
 	"testing"
 
+	gomock "github.com/golang/mock/gomock"
 	"github.com/ljanyst/peroxide/pkg/events"
 	"github.com/ljanyst/peroxide/pkg/users/credentials"
-	gomock "github.com/golang/mock/gomock"
 	r "github.com/stretchr/testify/require"
 )
 
@@ -33,7 +33,7 @@ func TestNewUserNoCredentialsStore(t *testing.T) {
 
 	m.credentialsStore.EXPECT().Get("user").Return(nil, errors.New("fail"))
 
-	_, _, err := newUser(m.PanicHandler, "user", m.eventListener, m.credentialsStore, m.storeMaker)
+	_, _, err := newUser("user", m.eventListener, m.credentialsStore, m.storeMaker)
 	r.Error(t, err)
 }
 
@@ -71,7 +71,7 @@ func TestNewUser(t *testing.T) {
 }
 
 func checkNewUserHasCredentials(m mocks, wantErr string, wantCreds *credentials.Credentials) {
-	user, _, err := newUser(m.PanicHandler, "user", m.eventListener, m.credentialsStore, m.storeMaker)
+	user, _, err := newUser("user", m.eventListener, m.credentialsStore, m.storeMaker)
 	r.NoError(m.t, err)
 	defer cleanUpUserData(user)
 

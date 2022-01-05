@@ -26,13 +26,6 @@ import (
 	"time"
 
 	imapid "github.com/ProtonMail/go-imap-id"
-	"github.com/ljanyst/peroxide/pkg/bridge"
-	"github.com/ljanyst/peroxide/pkg/config/useragent"
-	"github.com/ljanyst/peroxide/pkg/imap/id"
-	"github.com/ljanyst/peroxide/pkg/imap/idle"
-	"github.com/ljanyst/peroxide/pkg/imap/uidplus"
-	"github.com/ljanyst/peroxide/pkg/serverutil"
-	"github.com/ljanyst/peroxide/pkg/listener"
 	"github.com/emersion/go-imap"
 	imapappendlimit "github.com/emersion/go-imap-appendlimit"
 	imapmove "github.com/emersion/go-imap-move"
@@ -41,15 +34,21 @@ import (
 	"github.com/emersion/go-imap/backend"
 	imapserver "github.com/emersion/go-imap/server"
 	"github.com/emersion/go-sasl"
+	"github.com/ljanyst/peroxide/pkg/bridge"
+	"github.com/ljanyst/peroxide/pkg/config/useragent"
+	"github.com/ljanyst/peroxide/pkg/imap/id"
+	"github.com/ljanyst/peroxide/pkg/imap/idle"
+	"github.com/ljanyst/peroxide/pkg/imap/uidplus"
+	"github.com/ljanyst/peroxide/pkg/listener"
+	"github.com/ljanyst/peroxide/pkg/serverutil"
 )
 
 // Server takes care of IMAP listening serving. It implements serverutil.Server.
 type Server struct {
-	panicHandler panicHandler
-	userAgent    *useragent.UserAgent
-	debugClient  bool
-	debugServer  bool
-	port         int
+	userAgent   *useragent.UserAgent
+	debugClient bool
+	debugServer bool
+	port        int
 
 	server     *imapserver.Server
 	controller serverutil.Controller
@@ -57,7 +56,6 @@ type Server struct {
 
 // NewIMAPServer constructs a new IMAP server configured with the given options.
 func NewIMAPServer(
-	panicHandler panicHandler,
 	debugClient, debugServer bool,
 	port int,
 	tls *tls.Config,
@@ -66,11 +64,10 @@ func NewIMAPServer(
 	eventListener listener.Listener,
 ) *Server {
 	server := &Server{
-		panicHandler: panicHandler,
-		userAgent:    userAgent,
-		debugClient:  debugClient,
-		debugServer:  debugServer,
-		port:         port,
+		userAgent:   userAgent,
+		debugClient: debugClient,
+		debugServer: debugServer,
+		port:        port,
 	}
 
 	server.server = newGoIMAPServer(tls, imapBackend, server.Address(), userAgent)
@@ -131,7 +128,6 @@ func (Server) Protocol() serverutil.Protocol { return serverutil.IMAP }
 func (s *Server) UseSSL() bool               { return false }
 func (s *Server) Address() string            { return fmt.Sprintf("%s:%d", bridge.Host, s.port) }
 func (s *Server) TLSConfig() *tls.Config     { return s.server.TLSConfig }
-func (s *Server) HandlePanic()               { s.panicHandler.HandlePanic() }
 
 func (s *Server) DebugServer() bool { return s.debugServer }
 func (s *Server) DebugClient() bool { return s.debugClient }

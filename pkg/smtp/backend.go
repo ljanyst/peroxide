@@ -21,26 +21,21 @@ import (
 	"strings"
 	"time"
 
+	goSMTPBackend "github.com/emersion/go-smtp"
 	"github.com/ljanyst/peroxide/pkg/bridge"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
-	"github.com/ljanyst/peroxide/pkg/users"
 	"github.com/ljanyst/peroxide/pkg/confirmer"
 	"github.com/ljanyst/peroxide/pkg/listener"
-	goSMTPBackend "github.com/emersion/go-smtp"
+	"github.com/ljanyst/peroxide/pkg/users"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
-
-type panicHandler interface {
-	HandlePanic()
-}
 
 type settingsProvider interface {
 	GetBool(string) bool
 }
 
 type smtpBackend struct {
-	panicHandler  panicHandler
 	eventListener listener.Listener
 	settings      settingsProvider
 	bridge        bridger
@@ -50,22 +45,19 @@ type smtpBackend struct {
 
 // NewSMTPBackend returns struct implementing go-smtp/backend interface.
 func NewSMTPBackend(
-	panicHandler panicHandler,
 	eventListener listener.Listener,
 	settings settingsProvider,
 	bridge *bridge.Bridge,
 ) *smtpBackend { //nolint[golint]
-	return newSMTPBackend(panicHandler, eventListener, settings, newBridgeWrap(bridge))
+	return newSMTPBackend(eventListener, settings, newBridgeWrap(bridge))
 }
 
 func newSMTPBackend(
-	panicHandler panicHandler,
 	eventListener listener.Listener,
 	settings settingsProvider,
 	bridge bridger,
 ) *smtpBackend {
 	return &smtpBackend{
-		panicHandler:  panicHandler,
 		eventListener: eventListener,
 		settings:      settings,
 		bridge:        bridge,
@@ -76,9 +68,6 @@ func newSMTPBackend(
 
 // Login authenticates a user.
 func (sb *smtpBackend) Login(_ *goSMTPBackend.ConnectionState, username, password string) (goSMTPBackend.Session, error) {
-	// Called from go-smtp in goroutines - we need to handle panics for each function.
-	defer sb.panicHandler.HandlePanic()
-
 	if sb.bridge.HasError(bridge.ErrLocalCacheUnavailable) {
 		return nil, users.ErrLoggedOutUser
 	}
@@ -107,13 +96,10 @@ func (sb *smtpBackend) Login(_ *goSMTPBackend.ConnectionState, username, passwor
 	if user.IsCombinedAddressMode() {
 		addressID = ""
 	}
-	return newSMTPUser(sb.panicHandler, sb.eventListener, sb, user, username, addressID)
+	return newSMTPUser(sb.eventListener, sb, user, username, addressID)
 }
 
 func (sb *smtpBackend) AnonymousLogin(_ *goSMTPBackend.ConnectionState) (goSMTPBackend.Session, error) {
-	// Called from go-smtp in goroutines - we need to handle panics for each function.
-	defer sb.panicHandler.HandlePanic()
-
 	return nil, errors.New("anonymous login not supported")
 }
 

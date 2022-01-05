@@ -31,18 +31,17 @@ import (
 	"time"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
+	goSMTPBackend "github.com/emersion/go-smtp"
 	"github.com/ljanyst/peroxide/pkg/events"
 	"github.com/ljanyst/peroxide/pkg/listener"
 	pkgMsg "github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/message/parser"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
-	goSMTPBackend "github.com/emersion/go-smtp"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
 type smtpUser struct {
-	panicHandler  panicHandler
 	eventListener listener.Listener
 	backend       *smtpBackend
 	user          bridgeUser
@@ -56,7 +55,6 @@ type smtpUser struct {
 
 // newSMTPUser returns struct implementing go-smtp/session interface.
 func newSMTPUser(
-	panicHandler panicHandler,
 	eventListener listener.Listener,
 	smtpBackend *smtpBackend,
 	user bridgeUser,
@@ -69,7 +67,6 @@ func newSMTPUser(
 	}
 
 	return &smtpUser{
-		panicHandler:  panicHandler,
 		eventListener: eventListener,
 		backend:       smtpBackend,
 		user:          user,
@@ -212,9 +209,6 @@ func (su *smtpUser) Data(r io.Reader) error {
 
 // Send sends an email from the given address to the given addresses with the given body.
 func (su *smtpUser) Send(returnPath string, to []string, messageReader io.Reader) (err error) { //nolint[funlen]
-	// Called from go-smtp in goroutines - we need to handle panics for each function.
-	defer su.panicHandler.HandlePanic()
-
 	b := new(bytes.Buffer)
 
 	messageReader = io.TeeReader(messageReader, b)

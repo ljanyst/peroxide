@@ -24,10 +24,10 @@ import (
 	"sync"
 
 	"github.com/ljanyst/peroxide/pkg/events"
-	"github.com/ljanyst/peroxide/pkg/store"
-	"github.com/ljanyst/peroxide/pkg/users/credentials"
 	"github.com/ljanyst/peroxide/pkg/listener"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/store"
+	"github.com/ljanyst/peroxide/pkg/users/credentials"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -37,11 +37,10 @@ var ErrLoggedOutUser = errors.New("account is logged out, use the app to login a
 
 // User is a struct on top of API client and credentials store.
 type User struct {
-	log          *logrus.Entry
-	panicHandler PanicHandler
-	listener     listener.Listener
-	client       pmapi.Client
-	credStorer   CredentialsStorer
+	log        *logrus.Entry
+	listener   listener.Listener
+	client     pmapi.Client
+	credStorer CredentialsStorer
 
 	storeFactory StoreMaker
 	store        *store.Store
@@ -57,7 +56,6 @@ type User struct {
 // newUser creates a new user.
 // The user is initially disconnected and must be connected by calling connect().
 func newUser(
-	panicHandler PanicHandler,
 	userID string,
 	eventListener listener.Listener,
 	credStorer CredentialsStorer,
@@ -74,7 +72,6 @@ func newUser(
 
 	return &User{
 		log:          log,
-		panicHandler: panicHandler,
 		listener:     eventListener,
 		credStorer:   credStorer,
 		storeFactory: storeFactory,

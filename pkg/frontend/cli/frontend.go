@@ -22,9 +22,9 @@ import (
 	"github.com/ljanyst/peroxide/pkg/config/settings"
 	"github.com/ljanyst/peroxide/pkg/events"
 	"github.com/ljanyst/peroxide/pkg/frontend/types"
+	"github.com/ljanyst/peroxide/pkg/listener"
 	"github.com/ljanyst/peroxide/pkg/locations"
 	"github.com/ljanyst/peroxide/pkg/updater"
-	"github.com/ljanyst/peroxide/pkg/listener"
 
 	"github.com/abiosoft/ishell"
 	"github.com/sirupsen/logrus"
@@ -48,8 +48,6 @@ type frontendCLI struct {
 
 // New returns a new CLI frontend configured with the given options.
 func New( //nolint[funlen]
-	panicHandler types.PanicHandler,
-
 	locations *locations.Locations,
 	settings *settings.Settings,
 	eventListener listener.Listener,
@@ -235,7 +233,6 @@ func New( //nolint[funlen]
 	})
 
 	go func() {
-		defer panicHandler.HandlePanic()
 		fe.watchEvents()
 	}()
 	return fe

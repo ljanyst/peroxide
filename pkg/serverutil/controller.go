@@ -76,8 +76,6 @@ func (c *controller) Close() {
 func (c *controller) ListenAndServe() {
 	go monitorDisconnectedUsers(c.server, c.signals, c.closeDisconnectUsers)
 
-	defer c.server.HandlePanic()
-
 	l := c.log.WithField("useSSL", c.server.UseSSL()).
 		WithField("address", c.server.Address())
 

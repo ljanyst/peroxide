@@ -64,7 +64,6 @@ func New(
 	locations Locator,
 	cacheProvider CacheProvider,
 	setting SettingsProvider,
-	panicHandler users.PanicHandler,
 	eventListener listener.Listener,
 	cache cache.Cache,
 	builder *message.Builder,
@@ -82,11 +81,10 @@ func New(
 
 	u := users.New(
 		locations,
-		panicHandler,
 		eventListener,
 		clientManager,
 		credStorer,
-		newStoreFactory(cacheProvider, panicHandler, eventListener, cache, builder),
+		newStoreFactory(cacheProvider, eventListener, cache, builder),
 	)
 
 	b := &Bridge{

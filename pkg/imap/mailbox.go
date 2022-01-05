@@ -21,16 +21,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/emersion/go-imap"
 	"github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
-	"github.com/emersion/go-imap"
 	"github.com/sirupsen/logrus"
 )
 
 type imapMailbox struct {
-	panicHandler panicHandler
-	user         *imapUser
-	name         string
+	user *imapUser
+	name string
 
 	log *logrus.Entry
 
@@ -40,11 +39,10 @@ type imapMailbox struct {
 }
 
 // newIMAPMailbox returns struct implementing go-imap/mailbox interface.
-func newIMAPMailbox(panicHandler panicHandler, user *imapUser, storeMailbox storeMailboxProvider) *imapMailbox {
+func newIMAPMailbox(user *imapUser, storeMailbox storeMailboxProvider) *imapMailbox {
 	return &imapMailbox{
-		panicHandler: panicHandler,
-		user:         user,
-		name:         storeMailbox.Name(),
+		user: user,
+		name: storeMailbox.Name(),
 
 		log: log.
 			WithField("addressID", user.storeAddress.AddressID()).
@@ -78,17 +76,11 @@ func (im *imapMailbox) logCommand(callback func() error, cmd string, params ...i
 
 // Name returns this mailbox name.
 func (im *imapMailbox) Name() string {
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer im.panicHandler.HandlePanic()
-
 	return im.name
 }
 
 // Info returns this mailbox info.
 func (im *imapMailbox) Info() (*imap.MailboxInfo, error) {
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer im.panicHandler.HandlePanic()
-
 	info := &imap.MailboxInfo{
 		Attributes: im.getFlags(),
 		Delimiter:  im.storeMailbox.GetDelimiter(),
@@ -129,9 +121,6 @@ func (im *imapMailbox) getFlags() []string {
 // It always returns the state of DB (which could be different to server status).
 // Additionally it checks that all stored numbers are same as in DB and polls events if needed.
 func (im *imapMailbox) Status(items []imap.StatusItem) (*imap.MailboxStatus, error) {
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer im.panicHandler.HandlePanic()
-
 	l := log.WithField("status-label", im.storeMailbox.LabelID())
 	l.Data["user"] = im.storeUser.UserID()
 	l.Data["address"] = im.storeAddress.AddressID()
@@ -171,9 +160,6 @@ func (im *imapMailbox) Status(items []imap.StatusItem) (*imap.MailboxStatus, err
 // SetSubscribed adds or removes the mailbox to the server's set of "active"
 // or "subscribed" mailboxes.
 func (im *imapMailbox) SetSubscribed(subscribed bool) error {
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer im.panicHandler.HandlePanic()
-
 	label := im.storeMailbox.LabelID()
 	if subscribed && !im.user.isSubscribed(label) {
 		im.user.removeFromCache(SubscriptionException, label)

@@ -39,7 +39,6 @@ type Frontend interface {
 
 // New returns initialized frontend based on `frontendType`, which can be `cli` or `qt`.
 func New(
-	panicHandler types.PanicHandler,
 	locations *locations.Locations,
 	settings *settings.Settings,
 	eventListener listener.Listener,
@@ -49,7 +48,6 @@ func New(
 ) Frontend {
 	bridgeWrap := types.NewBridgeWrap(bridge)
 	return cli.New(
-		panicHandler,
 		locations,
 		settings,
 		eventListener,

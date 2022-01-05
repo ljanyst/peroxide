@@ -34,7 +34,6 @@ type Server interface {
 	DebugClient() bool
 	SetLoggers(localDebug, remoteDebug io.Writer)
 
-	HandlePanic()
 	DisconnectUser(string)
 	Serve(net.Listener) error
 	StopServe() error

@@ -36,21 +36,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/emersion/go-imap"
+	goIMAPBackend "github.com/emersion/go-imap/backend"
 	"github.com/ljanyst/peroxide/pkg/bridge"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
 	"github.com/ljanyst/peroxide/pkg/events"
-	"github.com/ljanyst/peroxide/pkg/users"
 	"github.com/ljanyst/peroxide/pkg/listener"
-	"github.com/emersion/go-imap"
-	goIMAPBackend "github.com/emersion/go-imap/backend"
+	"github.com/ljanyst/peroxide/pkg/users"
 )
 
-type panicHandler interface {
-	HandlePanic()
-}
-
 type imapBackend struct {
-	panicHandler  panicHandler
 	bridge        bridger
 	updates       *imapUpdates
 	eventListener listener.Listener
@@ -70,7 +65,6 @@ type settingsProvider interface {
 
 // NewIMAPBackend returns struct implementing go-imap/backend interface.
 func NewIMAPBackend(
-	panicHandler panicHandler,
 	eventListener listener.Listener,
 	cache cacheProvider,
 	setting settingsProvider,
@@ -79,7 +73,7 @@ func NewIMAPBackend(
 	bridgeWrap := newBridgeWrap(bridge)
 
 	imapWorkers := setting.GetInt(settings.IMAPWorkers)
-	backend := newIMAPBackend(panicHandler, cache, bridgeWrap, eventListener, imapWorkers)
+	backend := newIMAPBackend(cache, bridgeWrap, eventListener, imapWorkers)
 
 	go backend.monitorDisconnectedUsers()
 
@@ -87,14 +81,12 @@ func NewIMAPBackend(
 }
 
 func newIMAPBackend(
-	panicHandler panicHandler,
 	cache cacheProvider,
 	bridge bridger,
 	eventListener listener.Listener,
 	listWorkers int,
 ) *imapBackend {
 	return &imapBackend{
-		panicHandler:  panicHandler,
 		bridge:        bridge,
 		updates:       newIMAPUpdates(),
 		eventListener: eventListener,
@@ -143,7 +135,7 @@ func (ib *imapBackend) createUser(address string) (*imapUser, error) {
 		return nil, err
 	}
 
-	newUser, err := newIMAPUser(ib.panicHandler, ib, user, addressID, address)
+	newUser, err := newIMAPUser(ib, user, addressID, address)
 	if err != nil {
 		return nil, err
 	}
@@ -166,9 +158,6 @@ func (ib *imapBackend) deleteUser(address string) {
 
 // Login authenticates a user.
 func (ib *imapBackend) Login(_ *imap.ConnInfo, username, password string) (goIMAPBackend.User, error) {
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer ib.panicHandler.HandlePanic()
-
 	if ib.bridge.HasError(bridge.ErrLocalCacheUnavailable) {
 		return nil, users.ErrLoggedOutUser
 	}
@@ -203,9 +192,6 @@ func (ib *imapBackend) Login(_ *imap.ConnInfo, username, password string) (goIMA
 
 // Updates returns a channel of updates for IMAP IDLE extension.
 func (ib *imapBackend) Updates() <-chan goIMAPBackend.Update {
-	// Called from go-imap in goroutines - we need to handle panics for each function.
-	defer ib.panicHandler.HandlePanic()
-
 	return ib.updates.ch
 }
 

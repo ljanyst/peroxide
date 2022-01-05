@@ -43,7 +43,7 @@ type messageLister interface {
 	ListMessages(context.Context, *pmapi.MessagesFilter) ([]*pmapi.Message, int, error)
 }
 
-func syncAllMail(panicHandler PanicHandler, store storeSynchronizer, api messageLister, syncState *syncState) error {
+func syncAllMail(store storeSynchronizer, api messageLister, syncState *syncState) error {
 	labelID := pmapi.AllMailLabel
 
 	// When the full sync starts (i.e. is not already in progress), we need to load
@@ -69,7 +69,6 @@ func syncAllMail(panicHandler PanicHandler, store storeSynchronizer, api message
 		wg.Add(1)
 		idRange := idRange // Bind for goroutine.
 		go func() {
-			defer panicHandler.HandlePanic()
 			defer wg.Done()
 
 			err := syncBatch(labelID, store, api, syncState, idRange, &shouldStop)
