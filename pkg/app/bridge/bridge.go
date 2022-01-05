@@ -100,7 +100,6 @@ func MailLoop(b *base.Base) error { // nolint[funlen]
 		b.Settings,
 		b.Listener,
 		bridge,
-		b,
 	)
 
 	return f.Loop()

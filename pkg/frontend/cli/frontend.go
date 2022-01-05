@@ -40,8 +40,6 @@ type frontendCLI struct {
 	settings      *settings.Settings
 	eventListener listener.Listener
 	bridge        types.Bridger
-
-	restarter types.Restarter
 }
 
 // New returns a new CLI frontend configured with the given options.
@@ -50,7 +48,6 @@ func New( //nolint[funlen]
 	settings *settings.Settings,
 	eventListener listener.Listener,
 	bridge types.Bridger,
-	restarter types.Restarter,
 ) *frontendCLI { //nolint[golint]
 	fe := &frontendCLI{
 		Shell: ishell.New(),
@@ -59,8 +56,6 @@ func New( //nolint[funlen]
 		settings:      settings,
 		eventListener: eventListener,
 		bridge:        bridge,
-
-		restarter: restarter,
 	}
 
 	// Clear commands.
@@ -252,5 +247,3 @@ func (f *frontendCLI) Loop() error {
 	f.Run()
 	return nil
 }
-
-func (f *frontendCLI) WaitUntilFrontendIsReady() {}

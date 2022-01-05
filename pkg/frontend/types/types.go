@@ -23,11 +23,6 @@ import (
 	"github.com/ljanyst/peroxide/pkg/pmapi"
 )
 
-// Restarter allows the app to set itself to restart next time it is closed.
-type Restarter interface {
-	SetToRestart()
-}
-
 type NoEncConfirmator interface {
 	ConfirmNoEncryption(string, bool)
 }

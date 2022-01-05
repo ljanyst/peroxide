@@ -21,10 +21,10 @@ import (
 	"context"
 	"strings"
 
+	"github.com/abiosoft/ishell"
 	"github.com/ljanyst/peroxide/pkg/bridge"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
 	"github.com/ljanyst/peroxide/pkg/frontend/types"
-	"github.com/abiosoft/ishell"
 )
 
 func (f *frontendCLI) listAccounts(c *ishell.Context) {
@@ -213,10 +213,6 @@ func (f *frontendCLI) deleteEverything(c *ishell.Context) {
 	f.bridge.FactoryReset()
 
 	c.Println("Everything cleared")
-
-	// Clearing data removes everything (db, preferences, ...) so everything has to be stopped and started again.
-	f.restarter.SetToRestart()
-
 	f.Stop()
 }
 

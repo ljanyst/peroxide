@@ -37,7 +37,6 @@ func New(
 	settings *settings.Settings,
 	eventListener listener.Listener,
 	bridge *bridge.Bridge,
-	restarter types.Restarter,
 ) Frontend {
 	bridgeWrap := types.NewBridgeWrap(bridge)
 	return cli.New(
@@ -45,6 +44,5 @@ func New(
 		settings,
 		eventListener,
 		bridgeWrap,
-		restarter,
 	)
 }

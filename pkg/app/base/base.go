@@ -176,8 +176,3 @@ func New( // nolint[funlen]
 		Name: appName,
 	}, nil
 }
-
-// SetToRestart sets the app to restart the next time it is closed.
-func (b *Base) SetToRestart() {
-	b.restart = true
-}

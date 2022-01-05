@@ -23,9 +23,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/abiosoft/ishell"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
 	"github.com/ljanyst/peroxide/pkg/ports"
-	"github.com/abiosoft/ishell"
 )
 
 var (
@@ -35,7 +35,6 @@ var (
 func (f *frontendCLI) restart(c *ishell.Context) {
 	if f.yesNoQuestion("Are you sure you want to restart the Bridge") {
 		f.Println("Restarting Bridge...")
-		f.restarter.SetToRestart()
 		f.Stop()
 	}
 }
@@ -66,10 +65,6 @@ func (f *frontendCLI) deleteCache(c *ishell.Context) {
 	}
 
 	f.Println("Cached cleared, restarting bridge")
-
-	// Clearing data removes everything (db, preferences, ...) so everything has to be stopped and started again.
-	f.restarter.SetToRestart()
-
 	f.Stop()
 }
 
@@ -88,7 +83,6 @@ func (f *frontendCLI) changeSMTPSecurity(c *ishell.Context) {
 	if f.yesNoQuestion(msg) {
 		f.settings.SetBool(settings.SMTPSSLKey, !isSSL)
 		f.Println("Restarting Bridge...")
-		f.restarter.SetToRestart()
 		f.Stop()
 	}
 }
@@ -121,7 +115,6 @@ func (f *frontendCLI) changePort(c *ishell.Context) {
 		f.settings.Set(settings.IMAPPortKey, newIMAPPort)
 		f.settings.Set(settings.SMTPPortKey, newSMTPPort)
 		f.Println("Restarting Bridge...")
-		f.restarter.SetToRestart()
 		f.Stop()
 	} else {
 		f.Println("Nothing changed")
@@ -166,7 +159,6 @@ func (f *frontendCLI) enableCacheOnDisk(c *ishell.Context) {
 			return
 		}
 
-		f.restarter.SetToRestart()
 		f.Stop()
 	}
 }
@@ -183,7 +175,6 @@ func (f *frontendCLI) disableCacheOnDisk(c *ishell.Context) {
 			return
 		}
 
-		f.restarter.SetToRestart()
 		f.Stop()
 	}
 }
@@ -204,7 +195,6 @@ func (f *frontendCLI) setCacheOnDiskLocation(c *ishell.Context) {
 			return
 		}
 
-		f.restarter.SetToRestart()
 		f.Stop()
 	}
 }
