@@ -40,30 +40,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	appName       = "ProtonMail Bridge"
-	appUsage      = "ProtonMail IMAP and SMTP Bridge"
-	configName    = "bridge"
-	updateURLName = "bridge"
-	keychainName  = "bridge"
-	cacheVersion  = "c11"
-)
-
 func main() {
-	base, err := base.New(
-		appName,
-		appUsage,
-		configName,
-		updateURLName,
-		keychainName,
-		cacheVersion,
-	)
+	base, err := base.New()
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed to create app base")
-	}
-	// Other instance already running.
-	if base == nil {
-		return
 	}
 
 	if bridge.MailLoop(base); err != nil {

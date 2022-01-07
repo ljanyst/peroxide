@@ -60,34 +60,20 @@ type Base struct {
 	CookieJar *cookies.Jar
 	UserAgent *useragent.UserAgent
 	TLS       *tls.TLS
-
-	Name    string // the app's name
-	usage   string // the app's usage description
-	command string // the command used to launch the app (either the exe path or the launcher path)
-	restart bool   // whether the app is currently set to restart
-
-	teardown []func() error // actions to perform when app is exiting
 }
 
-func New( // nolint[funlen]
-	appName,
-	appUsage,
-	configName,
-	updateURLName,
-	keychainName,
-	cacheVersion string,
-) (*Base, error) {
+func New() (*Base, error) {
 	userAgent := useragent.New()
 
 	rand.Seed(time.Now().UnixNano())
 	os.Args = StripProcessSerialNumber(os.Args)
 
-	locationsProvider, err := locations.NewDefaultProvider(filepath.Join(constants.VendorName, configName))
+	locationsProvider, err := locations.NewDefaultProvider(filepath.Join("protonmail", "bridge"))
 	if err != nil {
 		return nil, err
 	}
 
-	locations := locations.New(locationsProvider, configName)
+	locations := locations.New(locationsProvider, "bridge")
 
 	logsPath, err := locations.ProvideLogsPath()
 	if err != nil {
@@ -97,7 +83,7 @@ func New( // nolint[funlen]
 		return nil, err
 	}
 
-	if err := migrateFiles(configName); err != nil {
+	if err := migrateFiles("bridge"); err != nil {
 		logrus.WithError(err).Warn("Old config files could not be migrated")
 	}
 
@@ -115,7 +101,7 @@ func New( // nolint[funlen]
 	if err != nil {
 		return nil, err
 	}
-	cache, err := cache.New(cachePath, cacheVersion)
+	cache, err := cache.New(cachePath, "c11")
 	if err != nil {
 		return nil, err
 	}
@@ -126,14 +112,12 @@ func New( // nolint[funlen]
 	listener := listener.New()
 	events.SetupEvents(listener)
 
-	// If we can't load the keychain for whatever reason,
-	// we signal to frontend and supply a dummy keychain that always returns errors.
-	kc, err := keychain.NewKeychain(settingsObj, keychainName)
+	kc, err := keychain.NewKeychain(settingsObj, "bridge")
 	if err != nil {
 		return nil, err
 	}
 
-	cfg := pmapi.NewConfig(configName, constants.Version)
+	cfg := pmapi.NewConfig("bridge", constants.Version)
 	cfg.GetUserAgent = userAgent.String
 	cfg.UpgradeApplicationHandler = func() { listener.Emit(events.UpgradeApplicationEvent, "") }
 	cfg.TLSIssueHandler = func() { listener.Emit(events.TLSCertIssue, "") }
@@ -162,7 +146,5 @@ func New( // nolint[funlen]
 		CookieJar: jar,
 		UserAgent: userAgent,
 		TLS:       tls.New(settingsPath),
-
-		Name: appName,
 	}, nil
 }
