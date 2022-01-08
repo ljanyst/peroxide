@@ -49,7 +49,6 @@ var (
 
 // Users is a struct handling users.
 type Users struct {
-	locations     Locator
 	events        listener.Listener
 	clientManager pmapi.Manager
 	credStorer    CredentialsStorer
@@ -65,7 +64,6 @@ type Users struct {
 }
 
 func New(
-	locations Locator,
 	eventListener listener.Listener,
 	clientManager pmapi.Manager,
 	credStorer CredentialsStorer,
@@ -74,7 +72,6 @@ func New(
 	log.Trace("Creating new users")
 
 	u := &Users{
-		locations:     locations,
 		events:        eventListener,
 		clientManager: clientManager,
 		credStorer:    credStorer,
@@ -340,10 +337,6 @@ func (u *Users) ClearData() error {
 		if err := user.closeStore(); err != nil {
 			result = multierror.Append(result, err)
 		}
-	}
-
-	if err := u.locations.Clear(); err != nil {
-		result = multierror.Append(result, err)
 	}
 
 	return result

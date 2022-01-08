@@ -25,11 +25,10 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/user"
-	"path/filepath"
-	"strings"
 
 	"golang.org/x/crypto/nacl/secretbox"
+
+	"github.com/ljanyst/peroxide/pkg/files"
 )
 
 const path = "~/.peroxide-creds"
@@ -64,17 +63,6 @@ func (s *Static) List() (map[string]string, error) {
 		list[v.ServerURL] = v.Username
 	}
 	return list, nil
-}
-
-func expandTilde(path string) string {
-	usr, _ := user.Current()
-	dir := usr.HomeDir
-	if path == "~" {
-		return dir
-	} else if strings.HasPrefix(path, "~/") {
-		return filepath.Join(dir, path[2:])
-	}
-	return path
 }
 
 func decryptSecrets(credentials map[string]Credentials) (map[string]Credentials, error) {
@@ -125,7 +113,7 @@ func encryptSecrets(credentials map[string]Credentials) (map[string]Credentials,
 }
 
 func loadStaticStore(path string) (map[string]Credentials, error) {
-	fileName := expandTilde(path)
+	fileName := files.ExpandTilde(path)
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil && !os.IsNotExist(err) {
 		return nil, fmt.Errorf("Unable to read the credential store file %s: %s", fileName, err)
@@ -147,7 +135,7 @@ func loadStaticStore(path string) (map[string]Credentials, error) {
 
 func dumpStaticStore(path string, credentials map[string]Credentials) error {
 	creds, err := encryptSecrets(credentials)
-	fileName := expandTilde(path)
+	fileName := files.ExpandTilde(path)
 	if err != nil {
 		return fmt.Errorf("Unable to encrypt the credential store %s: %s", fileName, err)
 	}

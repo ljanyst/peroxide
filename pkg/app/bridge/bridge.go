@@ -58,7 +58,6 @@ func MailLoop(b *base.Base) error { // nolint[funlen]
 	)
 
 	bridge := pkgBridge.New(
-		b.Locations,
 		b.Cache,
 		b.Settings,
 		b.Listener,
@@ -91,7 +90,6 @@ func MailLoop(b *base.Base) error { // nolint[funlen]
 	}()
 
 	f := frontend.New(
-		b.Locations,
 		b.Settings,
 		b.Listener,
 		bridge,

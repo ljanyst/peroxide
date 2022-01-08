@@ -52,18 +52,20 @@ const (
 	IMAPWorkers            = "imap_workers"
 	FetchWorkers           = "fetch_workers"
 	AttachmentWorkers      = "attachment_workers"
+	CacheDir               = "cache_dir"
+	TLSDir                 = "tls_dir"
 )
 
 type Settings struct {
 	*keyValueStore
 
-	settingsPath string
+	settingsDir string
 }
 
 func New(settingsPath string) *Settings {
 	s := &Settings{
-		keyValueStore: newKeyValueStore(filepath.Join(settingsPath, "prefs.json")),
-		settingsPath:  settingsPath,
+		keyValueStore: newKeyValueStore(settingsPath),
+		settingsDir:   filepath.Dir(settingsPath),
 	}
 
 	s.setDefaultValues()
@@ -105,4 +107,7 @@ func (s *Settings) setDefaultValues() {
 
 	// By default, stick to STARTTLS. If the user uses catalina+applemail they'll have to change to SSL.
 	s.setDefault(SMTPSSLKey, "false")
+
+	s.setDefault(CacheDir, filepath.Join(s.settingsDir, "cache"))
+	s.setDefault(TLSDir, s.settingsDir)
 }

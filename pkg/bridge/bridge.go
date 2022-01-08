@@ -43,7 +43,6 @@ var ErrLocalCacheUnavailable = errors.New("local cache is unavailable")
 type Bridge struct {
 	*users.Users
 
-	locations     Locator
 	settings      SettingsProvider
 	clientManager pmapi.Manager
 	cacheProvider CacheProvider
@@ -55,7 +54,6 @@ type Bridge struct {
 }
 
 func New(
-	locations Locator,
 	cacheProvider CacheProvider,
 	setting SettingsProvider,
 	eventListener listener.Listener,
@@ -71,7 +69,6 @@ func New(
 	}
 
 	u := users.New(
-		locations,
 		eventListener,
 		clientManager,
 		credStorer,
@@ -80,7 +77,6 @@ func New(
 
 	b := &Bridge{
 		Users:         u,
-		locations:     locations,
 		settings:      setting,
 		clientManager: clientManager,
 		cacheProvider: cacheProvider,

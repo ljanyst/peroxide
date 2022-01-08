@@ -23,7 +23,6 @@ import (
 	"github.com/ljanyst/peroxide/pkg/events"
 	"github.com/ljanyst/peroxide/pkg/frontend/types"
 	"github.com/ljanyst/peroxide/pkg/listener"
-	"github.com/ljanyst/peroxide/pkg/locations"
 
 	"github.com/abiosoft/ishell"
 	"github.com/sirupsen/logrus"
@@ -36,7 +35,6 @@ var (
 type frontendCLI struct {
 	*ishell.Shell
 
-	locations     *locations.Locations
 	settings      *settings.Settings
 	eventListener listener.Listener
 	bridge        types.Bridger
@@ -44,7 +42,6 @@ type frontendCLI struct {
 
 // New returns a new CLI frontend configured with the given options.
 func New( //nolint[funlen]
-	locations *locations.Locations,
 	settings *settings.Settings,
 	eventListener listener.Listener,
 	bridge types.Bridger,
@@ -52,7 +49,6 @@ func New( //nolint[funlen]
 	fe := &frontendCLI{
 		Shell: ishell.New(),
 
-		locations:     locations,
 		settings:      settings,
 		eventListener: eventListener,
 		bridge:        bridge,

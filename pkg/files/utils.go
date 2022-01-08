@@ -15,28 +15,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Peroxide.  If not, see <https://www.gnu.org/licenses/>.
 
-package main
+package files
 
 import (
-	"flag"
-
-	"github.com/ljanyst/peroxide/pkg/app/base"
-	"github.com/ljanyst/peroxide/pkg/app/bridge"
-	"github.com/ljanyst/peroxide/pkg/files"
-	"github.com/sirupsen/logrus"
+	"os/user"
+	"path/filepath"
+	"strings"
 )
 
-var config = flag.String("config", files.ExpandTilde("~/.config/protonmail/bridge/prefs.json"), "configuration file")
-
-func main() {
-	flag.Parse()
-
-	base, err := base.New(*config)
-	if err != nil {
-		logrus.WithError(err).Fatal("Failed to create app base")
+func ExpandTilde(path string) string {
+	usr, _ := user.Current()
+	dir := usr.HomeDir
+	if path == "~" {
+		return dir
+	} else if strings.HasPrefix(path, "~/") {
+		return filepath.Join(dir, path[2:])
 	}
-
-	if bridge.MailLoop(base); err != nil {
-		logrus.WithError(err).Fatal("Bridge exited with error")
-	}
+	return path
 }

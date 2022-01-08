@@ -24,7 +24,6 @@ import (
 	"github.com/ljanyst/peroxide/pkg/frontend/cli"
 	"github.com/ljanyst/peroxide/pkg/frontend/types"
 	"github.com/ljanyst/peroxide/pkg/listener"
-	"github.com/ljanyst/peroxide/pkg/locations"
 )
 
 type Frontend interface {
@@ -33,14 +32,12 @@ type Frontend interface {
 
 // New returns initialized frontend based on `frontendType`, which can be `cli` or `qt`.
 func New(
-	locations *locations.Locations,
 	settings *settings.Settings,
 	eventListener listener.Listener,
 	bridge *bridge.Bridge,
 ) Frontend {
 	bridgeWrap := types.NewBridgeWrap(bridge)
 	return cli.New(
-		locations,
 		settings,
 		eventListener,
 		bridgeWrap,

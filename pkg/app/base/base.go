@@ -31,7 +31,6 @@ package base
 import (
 	"math/rand"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/ljanyst/peroxide/pkg/config/cache"
@@ -43,15 +42,12 @@ import (
 	"github.com/ljanyst/peroxide/pkg/events"
 	"github.com/ljanyst/peroxide/pkg/keychain"
 	"github.com/ljanyst/peroxide/pkg/listener"
-	"github.com/ljanyst/peroxide/pkg/locations"
 	"github.com/ljanyst/peroxide/pkg/logging"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/ljanyst/peroxide/pkg/users/credentials"
-	"github.com/sirupsen/logrus"
 )
 
 type Base struct {
-	Locations *locations.Locations
 	Settings  *settings.Settings
 	Cache     *cache.Cache
 	Listener  listener.Listener
@@ -62,46 +58,19 @@ type Base struct {
 	TLS       *tls.TLS
 }
 
-func New() (*Base, error) {
+func New(configFile string) (*Base, error) {
 	userAgent := useragent.New()
 
 	rand.Seed(time.Now().UnixNano())
 	os.Args = StripProcessSerialNumber(os.Args)
 
-	locationsProvider, err := locations.NewDefaultProvider(filepath.Join("protonmail", "bridge"))
-	if err != nil {
+	if err := logging.Init(); err != nil {
 		return nil, err
 	}
 
-	locations := locations.New(locationsProvider, "bridge")
+	settingsObj := settings.New(configFile)
 
-	logsPath, err := locations.ProvideLogsPath()
-	if err != nil {
-		return nil, err
-	}
-	if err := logging.Init(logsPath); err != nil {
-		return nil, err
-	}
-
-	if err := migrateFiles("bridge"); err != nil {
-		logrus.WithError(err).Warn("Old config files could not be migrated")
-	}
-
-	if err := locations.Clean(); err != nil {
-		return nil, err
-	}
-
-	settingsPath, err := locations.ProvideSettingsPath()
-	if err != nil {
-		return nil, err
-	}
-	settingsObj := settings.New(settingsPath)
-
-	cachePath, err := locations.ProvideCachePath()
-	if err != nil {
-		return nil, err
-	}
-	cache, err := cache.New(cachePath, "c11")
+	cache, err := cache.New(settingsObj.Get(settings.CacheDir), "c11")
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +106,6 @@ func New() (*Base, error) {
 	cm.SetCookieJar(jar)
 
 	return &Base{
-		Locations: locations,
 		Settings:  settingsObj,
 		Cache:     cache,
 		Listener:  listener,
@@ -145,6 +113,6 @@ func New() (*Base, error) {
 		CM:        cm,
 		CookieJar: jar,
 		UserAgent: userAgent,
-		TLS:       tls.New(settingsPath),
+		TLS:       tls.New(settingsObj.Get(settings.TLSDir)),
 	}, nil
 }
