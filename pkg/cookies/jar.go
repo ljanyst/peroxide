@@ -21,13 +21,13 @@ package cookies
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"os"
 	"sync"
 	"time"
-
-	"github.com/ljanyst/peroxide/pkg/config/settings"
 )
 
 type cookiesByHost map[string][]*http.Cookie
@@ -35,19 +35,19 @@ type cookiesByHost map[string][]*http.Cookie
 // Jar implements http.CookieJar by wrapping the standard library's cookiejar.Jar.
 // The jar uses a pantry to load cookies at startup and save cookies when set.
 type Jar struct {
-	jar      *cookiejar.Jar
-	settings *settings.Settings
-	cookies  cookiesByHost
-	locker   sync.Locker
+	jar     *cookiejar.Jar
+	jarFile string
+	cookies cookiesByHost
+	locker  sync.Locker
 }
 
-func NewCookieJar(s *settings.Settings) (*Jar, error) {
+func NewCookieJar(jarFile string) (*Jar, error) {
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		return nil, err
 	}
 
-	cookiesByHost, err := loadCookies(s)
+	cookiesByHost, err := loadCookies(jarFile)
 	if err != nil {
 		return nil, err
 	}
@@ -62,10 +62,10 @@ func NewCookieJar(s *settings.Settings) (*Jar, error) {
 	}
 
 	return &Jar{
-		jar:      jar,
-		settings: s,
-		cookies:  cookiesByHost,
-		locker:   &sync.Mutex{},
+		jar:     jar,
+		jarFile: jarFile,
+		cookies: cookiesByHost,
+		locker:  &sync.Mutex{},
 	}, nil
 }
 
@@ -82,7 +82,7 @@ func (j *Jar) SetCookies(u *url.URL, cookies []*http.Cookie) {
 	}
 
 	j.cookies[fmt.Sprintf("%v://%v", u.Scheme, u.Host)] = cookies
-	j.PersistCookies()
+	j.persistCookies()
 }
 
 func (j *Jar) Cookies(u *url.URL) []*http.Cookie {
@@ -93,31 +93,34 @@ func (j *Jar) Cookies(u *url.URL) []*http.Cookie {
 }
 
 // PersistCookies persists the cookies to disk.
-func (j *Jar) PersistCookies() error {
-	j.locker.Lock()
-	defer j.locker.Unlock()
-
-	rawCookies, err := json.Marshal(j.cookies)
+func (j *Jar) persistCookies() error {
+	rawCookies, err := json.MarshalIndent(j.cookies, "", "    ")
 	if err != nil {
 		return err
 	}
 
-	j.settings.Set(settings.CookiesKey, string(rawCookies))
+	err = ioutil.WriteFile(j.jarFile, rawCookies, 0600)
+	if err != nil {
+		return fmt.Errorf("Unable to write the cookie jar file %s: %s", j.jarFile, err)
+	}
 
 	return nil
 }
 
 // loadCookies loads all non-expired cookies from disk.
-func loadCookies(s *settings.Settings) (cookiesByHost, error) {
-	rawCookies := s.Get(settings.CookiesKey)
+func loadCookies(jarFile string) (cookiesByHost, error) {
+	data, err := ioutil.ReadFile(jarFile)
+	if err != nil && !os.IsNotExist(err) {
+		return nil, fmt.Errorf("Unable to read the cookie jar file %s: %s", jarFile, err)
+	}
 
-	if rawCookies == "" {
+	if len(data) == 0 {
 		return make(cookiesByHost), nil
 	}
 
 	var cookiesByHost cookiesByHost
 
-	if err := json.Unmarshal([]byte(rawCookies), &cookiesByHost); err != nil {
+	if err := json.Unmarshal(data, &cookiesByHost); err != nil {
 		return nil, err
 	}
 

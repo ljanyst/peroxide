@@ -98,7 +98,7 @@ func New(configFile string) (*Base, error) {
 		func() { listener.Emit(events.InternetOnEvent, "") },
 	))
 
-	jar, err := cookies.NewCookieJar(settingsObj)
+	jar, err := cookies.NewCookieJar(settingsObj.Get(settings.CookieJar))
 	if err != nil {
 		return nil, err
 	}

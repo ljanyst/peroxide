@@ -54,6 +54,7 @@ const (
 	AttachmentWorkers      = "attachment_workers"
 	CacheDir               = "cache_dir"
 	TLSDir                 = "tls_dir"
+	CookieJar              = "cookie_jar"
 )
 
 type Settings struct {
@@ -110,4 +111,5 @@ func (s *Settings) setDefaultValues() {
 
 	s.setDefault(CacheDir, filepath.Join(s.settingsDir, "cache"))
 	s.setDefault(TLSDir, s.settingsDir)
+	s.setDefault(CookieJar, filepath.Join(s.settingsDir, "cookies.json"))
 }
