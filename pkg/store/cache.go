@@ -22,6 +22,7 @@ import (
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"github.com/ljanyst/peroxide/pkg/message"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/ljanyst/peroxide/pkg/store/cache"
 	bolt "go.etcd.io/bbolt"
 )
@@ -126,6 +127,7 @@ func (store *Store) getCachedMessage(messageID string) ([]byte, error) {
 
 	literal, err := job.GetResult()
 	if err != nil {
+		store.checkAndRemoveDeletedMessage(err, messageID)
 		return nil, err
 	}
 
@@ -184,8 +186,21 @@ func (store *Store) BuildAndCacheMessage(ctx context.Context, messageID string) 
 
 	literal, err := job.GetResult()
 	if err != nil {
+		store.checkAndRemoveDeletedMessage(err, messageID)
 		return err
 	}
 
 	return store.cache.Set(store.user.ID(), messageID, literal)
+}
+
+func (store *Store) checkAndRemoveDeletedMessage(err error, msgID string) {
+	if _, ok := err.(pmapi.ErrUnprocessableEntity); !ok {
+		return
+	}
+	l := store.log.WithError(err).WithField("msgID", msgID)
+	l.Warn("Deleting message which was not found on API")
+
+	if deleteErr := store.deleteMessageEvent(msgID); deleteErr != nil {
+		l.WithField("deleteErr", deleteErr).Error("Failed to delete non-existed API message from DB")
+	}
 }

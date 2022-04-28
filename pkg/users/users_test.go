@@ -173,6 +173,7 @@ func initMocks(t *testing.T) mocks {
 
 	cacheFile, err := ioutil.TempFile("", "bridge-store-cache-*.db")
 	r.NoError(t, err, "could not get temporary file for store cache")
+	r.NoError(t, cacheFile.Close())
 
 	m := mocks{
 		t: t,
@@ -193,6 +194,7 @@ func initMocks(t *testing.T) mocks {
 	m.storeMaker.EXPECT().New(gomock.Any()).DoAndReturn(func(user store.BridgeUser) (*store.Store, error) {
 		dbFile, err := ioutil.TempFile(t.TempDir(), "bridge-store-db-*.db")
 		r.NoError(t, err, "could not get temporary file for store db")
+		r.NoError(t, dbFile.Close())
 
 		return store.New(
 			user,
