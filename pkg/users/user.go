@@ -67,6 +67,7 @@ func newUser(
 
 	creds, err := credStorer.Get(userID)
 	if err != nil {
+		notifyKeychainRepair(eventListener, err)
 		return nil, nil, errors.Wrap(err, "failed to load user credentials")
 	}
 
@@ -159,6 +160,7 @@ func (u *User) handleAuthRefresh(auth *pmapi.AuthRefresh) {
 
 	creds, err := u.credStorer.UpdateToken(u.userID, auth.UID, auth.RefreshToken)
 	if err != nil {
+		notifyKeychainRepair(u.listener, err)
 		u.log.WithError(err).Error("Failed to update refresh token in credentials store")
 		return
 	}
@@ -220,7 +222,7 @@ func (u *User) UpdateSpace(apiUser *pmapi.User) {
 	// values from client.CurrentUser()
 	if apiUser == nil {
 		var err error
-		apiUser, err = u.client.GetUser(pmapi.ContextWithoutRetry(context.Background()))
+		apiUser, err = u.GetClient().GetUser(pmapi.ContextWithoutRetry(context.Background()))
 		if err != nil {
 			u.log.WithError(err).Warning("Cannot update user space")
 			return
@@ -277,16 +279,21 @@ func (u *User) unlockIfNecessary() error {
 		return nil
 	}
 
-	switch errors.Cause(err) {
-	case pmapi.ErrNoConnection, pmapi.ErrUpgradeApplication:
-		u.log.WithError(err).Warn("Could not unlock user")
-		return nil
+	if pmapi.IsFailedAuth(err) || pmapi.IsFailedUnlock(err) {
+		if logoutErr := u.logout(); logoutErr != nil {
+			u.log.WithError(logoutErr).Warn("Could not logout user")
+		}
+		return errors.Wrap(err, "failed to unlock user")
 	}
 
-	if logoutErr := u.logout(); logoutErr != nil {
-		u.log.WithError(logoutErr).Warn("Could not logout user")
+	switch errors.Cause(err) {
+	case pmapi.ErrNoConnection, pmapi.ErrUpgradeApplication:
+		u.log.WithError(err).Warn("Skipping unlock for known reason")
+	default:
+		u.log.WithError(err).Error("Unknown unlock issue")
 	}
-	return errors.Wrap(err, "failed to unlock user")
+
+	return nil
 }
 
 // IsCombinedAddressMode returns whether user is set in combined or split mode.
@@ -340,6 +347,10 @@ func (u *User) GetAddressID(address string) (id string, err error) {
 	if u.store != nil {
 		address = strings.ToLower(address)
 		return u.store.GetAddressID(address)
+	}
+
+	if u.client == nil {
+		return "", errors.New("bridge account is not fully connected to server")
 	}
 
 	addresses := u.client.Addresses()
@@ -396,6 +407,7 @@ func (u *User) UpdateUser(ctx context.Context) error {
 
 	creds, err := u.credStorer.UpdateEmails(u.userID, u.client.Addresses().ActiveEmails())
 	if err != nil {
+		notifyKeychainRepair(u.listener, err)
 		return err
 	}
 
@@ -433,6 +445,7 @@ func (u *User) SwitchAddressMode() error {
 
 	creds, err := u.credStorer.SwitchAddressMode(u.userID)
 	if err != nil {
+		notifyKeychainRepair(u.listener, err)
 		return errors.Wrap(err, "could not switch credentials store address mode")
 	}
 
@@ -470,15 +483,19 @@ func (u *User) Logout() error {
 		return nil
 	}
 
-	if err := u.client.AuthDelete(context.Background()); err != nil {
+	if u.client == nil {
+		u.log.Warn("Failed to delete auth: no client")
+	} else if err := u.client.AuthDelete(context.Background()); err != nil {
 		u.log.WithError(err).Warn("Failed to delete auth")
 	}
 
 	creds, err := u.credStorer.Logout(u.userID)
 	if err != nil {
+		notifyKeychainRepair(u.listener, err)
 		u.log.WithError(err).Warn("Could not log user out from credentials store")
 
 		if err := u.credStorer.Delete(u.userID); err != nil {
+			notifyKeychainRepair(u.listener, err)
 			u.log.WithError(err).Error("Could not delete user from credentials store")
 		}
 	} else {

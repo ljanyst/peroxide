@@ -36,7 +36,6 @@ import (
 	"github.com/ljanyst/peroxide/pkg/users/credentials"
 	usersmocks "github.com/ljanyst/peroxide/pkg/users/mocks"
 	tests "github.com/ljanyst/peroxide/test"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	r "github.com/stretchr/testify/require"
 )
@@ -321,7 +320,7 @@ func mockInitDisconnectedUser(m mocks) {
 		m.pmapiClient.EXPECT().AddAuthRefreshHandler(gomock.Any()),
 
 		// Mock of store initialisation for the unauthorized user.
-		m.pmapiClient.EXPECT().ListLabels(gomock.Any()).Return(nil, errors.New("ErrUnauthorized")),
+		m.pmapiClient.EXPECT().ListLabels(gomock.Any()).Return(nil, pmapi.ErrUnauthorized),
 		m.pmapiClient.EXPECT().Addresses().Return(nil),
 	)
 }

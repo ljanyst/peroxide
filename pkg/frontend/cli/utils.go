@@ -96,10 +96,10 @@ func (f *frontendCLI) notifyNeedUpgrade() {
 	f.Println("Application needs upgrade")
 }
 
-func (f *frontendCLI) notifyCredentialsError() { // nolint[unused]
+func (f *frontendCLI) notifyCredentialsError() {
 	// Print in 80-column width.
 	f.Println("ProtonMail Bridge is not able to detect a supported password manager")
-	f.Println("(pass, gnome-keyring). Please install and set up a supported password manager")
+	f.Println("(secret-service or pass). Please install and set up a supported password manager")
 	f.Println("and restart the application.")
 }
 

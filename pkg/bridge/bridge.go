@@ -26,13 +26,13 @@ import (
 
 	"github.com/ljanyst/peroxide/pkg/config/settings"
 	"github.com/ljanyst/peroxide/pkg/constants"
+	"github.com/ljanyst/peroxide/pkg/listener"
 	"github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/metrics"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/ljanyst/peroxide/pkg/store/cache"
 	"github.com/ljanyst/peroxide/pkg/users"
 
-	"github.com/ljanyst/peroxide/pkg/listener"
 	logrus "github.com/sirupsen/logrus"
 )
 
@@ -88,7 +88,6 @@ func New(
 		if err := b.SendMetric(metrics.New(metrics.Setup, metrics.FirstStart, metrics.Label(constants.Version))); err != nil {
 			logrus.WithError(err).Error("Failed to send metric")
 		}
-
 		setting.SetBool(settings.FirstStartKey, false)
 	}
 

@@ -123,6 +123,7 @@ func (u *Users) loadUsersFromCredentialsStore() error {
 
 	userIDs, err := u.credStorer.List()
 	if err != nil {
+		notifyKeychainRepair(u.events, err)
 		return err
 	}
 
@@ -171,14 +172,17 @@ func (u *Users) loadConnectedUser(ctx context.Context, user *User, creds *creden
 			return connectErr
 		}
 
-		if logoutErr := user.logout(); logoutErr != nil {
-			logrus.WithError(logoutErr).Warn("Could not logout user")
+		if pmapi.IsFailedAuth(connectErr) {
+			if logoutErr := user.logout(); logoutErr != nil {
+				logrus.WithError(logoutErr).Warn("Could not logout user")
+			}
 		}
 		return errors.Wrap(err, "could not refresh token")
 	}
 
 	// Update the user's credentials with the latest auth used to connect this user.
 	if creds, err = u.credStorer.UpdateToken(creds.UserID, auth.UID, auth.RefreshToken); err != nil {
+		notifyKeychainRepair(u.events, err)
 		return errors.Wrap(err, "could not create get user's refresh token")
 	}
 
@@ -217,12 +221,14 @@ func (u *Users) FinishLogin(client pmapi.Client, auth *pmapi.Auth, password []by
 
 		// Update the user's credentials with the latest auth used to connect this user.
 		if _, err := u.credStorer.UpdateToken(auth.UserID, auth.UID, auth.RefreshToken); err != nil {
+			notifyKeychainRepair(u.events, err)
 			return nil, errors.Wrap(err, "failed to load user credentials")
 		}
 
 		// Update the password in case the user changed it.
 		creds, err := u.credStorer.UpdatePassword(apiUser.ID, passphrase)
 		if err != nil {
+			notifyKeychainRepair(u.events, err)
 			return nil, errors.Wrap(err, "failed to update password of user in credentials store")
 		}
 
@@ -251,6 +257,7 @@ func (u *Users) addNewUser(client pmapi.Client, apiUser *pmapi.User, auth *pmapi
 	defer u.lock.Unlock()
 
 	if _, err := u.credStorer.Add(apiUser.ID, apiUser.Name, auth.UID, auth.RefreshToken, passphrase, client.Addresses().ActiveEmails()); err != nil {
+		notifyKeychainRepair(u.events, err)
 		return errors.Wrap(err, "failed to add user credentials to credentials store")
 	}
 
@@ -371,6 +378,7 @@ func (u *Users) DeleteUser(userID string, clearStore bool) error {
 			}
 
 			if err := u.credStorer.Delete(userID); err != nil {
+				notifyKeychainRepair(u.events, err)
 				log.WithError(err).Error("Cannot remove user")
 				return err
 			}
@@ -429,4 +437,7 @@ func (u *Users) crashBandicoot(username string) {
 	if username == "crash@bandicoot" {
 		panic("Your wish is my command… I crash!")
 	}
+}
+
+func notifyKeychainRepair(l listener.Listener, err error) {
 }

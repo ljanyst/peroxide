@@ -22,9 +22,10 @@ import (
 	"testing"
 	time "time"
 
-	"github.com/ljanyst/peroxide/pkg/events"
-	"github.com/ljanyst/peroxide/pkg/users/credentials"
 	gomock "github.com/golang/mock/gomock"
+	"github.com/ljanyst/peroxide/pkg/events"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/users/credentials"
 	r "github.com/stretchr/testify/require"
 )
 
@@ -80,11 +81,11 @@ func TestNewUsersWithConnectedUserWithBadToken(t *testing.T) {
 	m := initMocks(t)
 	defer m.ctrl.Finish()
 
-	m.clientManager.EXPECT().NewClientWithRefresh(gomock.Any(), "uid", "acc").Return(nil, nil, errors.New("bad token"))
+	m.clientManager.EXPECT().NewClientWithRefresh(gomock.Any(), "uid", "acc").Return(nil, nil, pmapi.ErrAuthFailed{OriginalError: errors.New("bad token")})
 	m.clientManager.EXPECT().NewClient("uid", "", "acc", time.Time{}).Return(m.pmapiClient)
 	m.pmapiClient.EXPECT().AddAuthRefreshHandler(gomock.Any())
 	m.pmapiClient.EXPECT().IsUnlocked().Return(false)
-	m.pmapiClient.EXPECT().Unlock(gomock.Any(), testCredentials.MailboxPassword).Return(errors.New("not authorized"))
+	m.pmapiClient.EXPECT().Unlock(gomock.Any(), testCredentials.MailboxPassword).Return(pmapi.ErrAuthFailed{OriginalError: errors.New("not authorized")})
 	m.pmapiClient.EXPECT().AuthDelete(gomock.Any())
 
 	m.credentialsStore.EXPECT().List().Return([]string{"user"}, nil)
@@ -93,7 +94,6 @@ func TestNewUsersWithConnectedUserWithBadToken(t *testing.T) {
 
 	m.eventListener.EXPECT().Emit(events.UserRefreshEvent, "user")
 	m.eventListener.EXPECT().Emit(events.LogoutEvent, "user")
-	m.eventListener.EXPECT().Emit(events.UserRefreshEvent, "user")
 	m.eventListener.EXPECT().Emit(events.CloseConnectionEvent, "user@pm.me")
 
 	checkUsersNew(t, m, []*credentials.Credentials{testCredentialsDisconnected})
