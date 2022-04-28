@@ -12,7 +12,6 @@ require (
 
 require (
 	github.com/Masterminds/semver/v3 v3.1.0
-	github.com/ProtonMail/go-autostart v0.0.0-20181114175602-c5272053443a
 	github.com/ProtonMail/go-crypto v0.0.0-20211221144345-a4f6767435ab
 	github.com/ProtonMail/go-imap-id v0.0.0-20190926060100-f94a56b9ecde
 	github.com/ProtonMail/go-rfc5322 v0.8.0
