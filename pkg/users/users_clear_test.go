@@ -20,8 +20,8 @@ package users
 import (
 	"testing"
 
-	"github.com/ljanyst/peroxide/pkg/events"
 	gomock "github.com/golang/mock/gomock"
+	"github.com/ljanyst/peroxide/pkg/events"
 	r "github.com/stretchr/testify/require"
 )
 
@@ -45,8 +45,6 @@ func TestClearData(t *testing.T) {
 
 	m.pmapiClient.EXPECT().AuthDelete(gomock.Any())
 	m.credentialsStore.EXPECT().Logout("users").Return(testCredentialsSplitDisconnected, nil)
-
-	m.locator.EXPECT().Clear()
 
 	r.NoError(t, users.ClearData())
 }

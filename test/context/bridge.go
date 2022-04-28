@@ -20,11 +20,8 @@ package context
 import (
 	"time"
 
-	"github.com/ProtonMail/go-autostart"
 	"github.com/ljanyst/peroxide/pkg/bridge"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
-	"github.com/ljanyst/peroxide/pkg/config/useragent"
-	"github.com/ljanyst/peroxide/pkg/constants"
 	"github.com/ljanyst/peroxide/pkg/listener"
 	"github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
@@ -75,20 +72,12 @@ func newBridgeInstance(
 	clientManager pmapi.Manager,
 ) *bridge.Bridge {
 	return bridge.New(
-		locations,
 		cacheProvider,
 		fakeSettings,
-		&panicHandler{t: t},
 		eventListener,
 		cache.NewInMemoryCache(100*(1<<20)),
 		message.NewBuilder(fakeSettings.GetInt(settings.FetchWorkers), fakeSettings.GetInt(settings.AttachmentWorkers)),
 		clientManager,
 		credStore,
-		newFakeUpdater(),
-		newFakeVersioner(),
-		&autostart.App{
-			Name: "bridge",
-			Exec: []string{"bridge"},
-		},
 	)
 }

@@ -54,13 +54,12 @@ func (ctx *TestContext) withSMTPServer() {
 	}
 
 	settingsPath, _ := ctx.locations.ProvideSettingsPath()
-	ph := newPanicHandler(ctx.t)
 	tls, _ := tls.New(settingsPath).GetConfig()
 	port := ctx.settings.GetInt(settings.SMTPPortKey)
 	useSSL := ctx.settings.GetBool(settings.SMTPSSLKey)
 
-	backend := smtp.NewSMTPBackend(ph, ctx.listener, ctx.settings, ctx.bridge)
-	server := smtp.NewSMTPServer(ph, true, port, useSSL, tls, backend, ctx.listener)
+	backend := smtp.NewSMTPBackend(ctx.listener, ctx.settings, ctx.bridge)
+	server := smtp.NewSMTPServer(true, port, useSSL, tls, backend, ctx.listener)
 
 	go server.ListenAndServe()
 	require.NoError(ctx.t, waitForPort(port, 5*time.Second))

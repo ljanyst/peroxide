@@ -54,12 +54,11 @@ func (ctx *TestContext) withIMAPServer() {
 	}
 
 	settingsPath, _ := ctx.locations.ProvideSettingsPath()
-	ph := newPanicHandler(ctx.t)
 	port := ctx.settings.GetInt(settings.IMAPPortKey)
 	tls, _ := tls.New(settingsPath).GetConfig()
 
-	backend := imap.NewIMAPBackend(ph, ctx.listener, ctx.cache, ctx.settings, ctx.bridge)
-	server := imap.NewIMAPServer(ph, true, true, port, tls, backend, ctx.userAgent, ctx.listener)
+	backend := imap.NewIMAPBackend(ctx.listener, ctx.cache, ctx.settings, ctx.bridge)
+	server := imap.NewIMAPServer(true, true, port, tls, backend, ctx.userAgent, ctx.listener)
 
 	go server.ListenAndServe()
 	require.NoError(ctx.t, waitForPort(port, 5*time.Second))

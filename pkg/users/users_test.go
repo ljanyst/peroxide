@@ -178,7 +178,6 @@ func initMocks(t *testing.T) mocks {
 		t: t,
 
 		ctrl:             mockCtrl,
-		locator:          usersmocks.NewMockLocator(mockCtrl),
 		credentialsStore: usersmocks.NewMockCredentialsStorer(mockCtrl),
 		storeMaker:       usersmocks.NewMockStoreMaker(mockCtrl),
 		eventListener:    usersmocks.NewMockListener(mockCtrl),
@@ -236,7 +235,7 @@ func testNewUsers(t *testing.T, m mocks) *Users { //nolint[unparam]
 	m.eventListener.EXPECT().ProvideChannel(events.UpgradeApplicationEvent)
 	m.eventListener.EXPECT().ProvideChannel(events.InternetOnEvent)
 
-	users := New(m.locator, m.eventListener, m.clientManager, m.credentialsStore, m.storeMaker)
+	users := New(m.eventListener, m.clientManager, m.credentialsStore, m.storeMaker)
 
 	waitForEvents()
 
