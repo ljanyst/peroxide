@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Proton Technologies AG
+// Copyright (c) 2022 Proton Technologies AG
 //
 // This file is part of ProtonMail Bridge.
 //
@@ -67,6 +67,10 @@ func (cacher *MsgCachePool) newJob(messageID string) {
 }
 
 func (cacher *MsgCachePool) start() {
+	if cacher.started {
+		return
+	}
+
 	cacher.started = true
 
 	go func() {

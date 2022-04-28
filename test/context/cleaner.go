@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Proton Technologies AG
+// Copyright (c) 2022 Proton Technologies AG
 //
 // This file is part of ProtonMail Bridge.Bridge.
 //
@@ -62,7 +62,7 @@ func (ctx *TestContext) addCleanup(c func(), label string) {
 		cleaner.file, cleaner.lineNumber = filepath.Base(file), line
 	}
 
-	ctx.cleanupSteps = append(ctx.cleanupSteps, cleaner)
+	ctx.cleanupSteps = append([]*Cleaner{cleaner}, ctx.cleanupSteps...)
 }
 
 // addCleanupChecked adds an operation that may return an error to be performed at the end of the test.
@@ -83,5 +83,5 @@ func (ctx *TestContext) addCleanupChecked(f func() error, label string) {
 		cleaner.file, cleaner.lineNumber = filepath.Base(file), line
 	}
 
-	ctx.cleanupSteps = append(ctx.cleanupSteps, cleaner)
+	ctx.cleanupSteps = append([]*Cleaner{cleaner}, ctx.cleanupSteps...)
 }

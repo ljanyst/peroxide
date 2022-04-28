@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Proton Technologies AG
+// Copyright (c) 2022 Proton Technologies AG
 //
 // This file is part of ProtonMail Bridge.
 //
@@ -46,6 +46,9 @@ func MailLoop(b *base.Base) error { // nolint[funlen]
 	if err != nil {
 		return err
 	}
+
+	// GODT-1481: Always turn off reporting of unencrypted recipient in v2.
+	b.Settings.SetBool(settings.ReportOutgoingNoEncKey, false)
 
 	cache, cacheErr := loadMessageCache(b)
 	if cacheErr != nil {

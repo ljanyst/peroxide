@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Proton Technologies AG
+// Copyright (c) 2022 Proton Technologies AG
 //
 // This file is part of ProtonMail Bridge.
 //
@@ -371,8 +371,9 @@ func (im *imapMailbox) SearchMessages(isUID bool, criteria *imap.SearchCriteria)
 			}
 		}
 
-		// In order to speed up search it is not needed to check if IsFullHeaderCached.
-		header := storeMessage.GetMIMEHeader()
+		// In order to speed up search it is not needed to always
+		// retrieve the fully cached header.
+		header := storeMessage.GetMIMEHeaderFast()
 
 		if !criteria.SentBefore.IsZero() || !criteria.SentSince.IsZero() {
 			t, err := mail.Header(header).Date()

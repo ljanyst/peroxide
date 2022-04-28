@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Proton Technologies AG
+// Copyright (c) 2022 Proton Technologies AG
 //
 // This file is part of ProtonMail Bridge.
 //
@@ -27,7 +27,6 @@ import (
 	pkgMsg "github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/golang/mock/gomock"
-	a "github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
 )
@@ -72,6 +71,7 @@ func TestGetMessageFromDB(t *testing.T) {
 }
 
 func TestCreateOrUpdateMessageMetadata(t *testing.T) {
+	r := require.New(t)
 	m, clear := initMocks(t)
 	defer clear()
 
@@ -79,33 +79,37 @@ func TestCreateOrUpdateMessageMetadata(t *testing.T) {
 	insertMessage(t, m, "msg1", "Test message 1", addrID1, false, []string{pmapi.AllMailLabel})
 
 	metadata, err := m.store.getMessageFromDB("msg1")
-	require.Nil(t, err)
+	r.NoError(err)
 
 	msg := &Message{msg: metadata, store: m.store, storeMailbox: nil}
 
 	// Check non-meta and calculated data are cleared/empty.
-	a.Equal(t, "", metadata.Body)
-	a.Equal(t, []*pmapi.Attachment(nil), metadata.Attachments)
-	a.Equal(t, "", metadata.MIMEType)
-	a.Equal(t, make(mail.Header), metadata.Header)
+	r.Equal("", metadata.Body)
+	r.Equal([]*pmapi.Attachment(nil), metadata.Attachments)
+	r.Equal("", metadata.MIMEType)
+	r.Equal(make(mail.Header), metadata.Header)
 
 	wantHeader, wantSize := putBodystructureAndSizeToDB(m, "msg1")
 
 	// Check cached data.
-	require.Nil(t, err)
-	a.Equal(t, wantHeader, msg.GetMIMEHeader())
+	haveHeader, err := msg.GetMIMEHeader()
+	r.NoError(err)
+	r.Equal(wantHeader, haveHeader)
+
 	haveSize, err := msg.GetRFC822Size()
-	require.Nil(t, err)
-	a.Equal(t, wantSize, haveSize)
+	r.NoError(err)
+	r.Equal(wantSize, haveSize)
 
 	// Check cached data are not overridden by reinsert.
 	insertMessage(t, m, "msg1", "Test message 1", addrID1, false, []string{pmapi.AllMailLabel})
 
-	require.Nil(t, err)
-	a.Equal(t, wantHeader, msg.GetMIMEHeader())
+	haveHeader, err = msg.GetMIMEHeader()
+	r.NoError(err)
+	r.Equal(wantHeader, haveHeader)
+
 	haveSize, err = msg.GetRFC822Size()
-	require.Nil(t, err)
-	a.Equal(t, wantSize, haveSize)
+	r.NoError(err)
+	r.Equal(wantSize, haveSize)
 }
 
 func TestDeleteMessage(t *testing.T) {

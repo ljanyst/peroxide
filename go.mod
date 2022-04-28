@@ -13,12 +13,12 @@ require (
 require (
 	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/ProtonMail/go-autostart v0.0.0-20181114175602-c5272053443a
-	github.com/ProtonMail/go-crypto v0.0.0-20210707164159-52430bf6b52c
+	github.com/ProtonMail/go-crypto v0.0.0-20211221144345-a4f6767435ab
 	github.com/ProtonMail/go-imap-id v0.0.0-20190926060100-f94a56b9ecde
 	github.com/ProtonMail/go-rfc5322 v0.8.0
 	github.com/ProtonMail/go-srp v0.0.1
 	github.com/ProtonMail/go-vcard v0.0.0-20180326232728-33aaa0a0c8a5
-	github.com/ProtonMail/gopenpgp/v2 v2.2.2
+	github.com/ProtonMail/gopenpgp/v2 v2.4.1
 	github.com/PuerkitoBio/goquery v1.5.1
 	github.com/abiosoft/ishell v2.0.0+incompatible
 	github.com/abiosoft/readline v0.0.0-20180607040430-155bce2042db // indirect
@@ -38,7 +38,7 @@ require (
 	github.com/flynn-archive/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/golang/mock v1.4.4
-	github.com/google/go-cmp v0.5.1
+	github.com/google/go-cmp v0.5.5
 	github.com/google/uuid v1.1.1
 	github.com/gopherjs/gopherjs v0.0.0-20190411002643-bd77b112433e // indirect
 	github.com/hashicorp/go-multierror v1.1.0
@@ -57,8 +57,9 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.1.3
 	go.etcd.io/bbolt v1.3.6
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
-	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4
-	golang.org/x/text v0.3.5-0.20201125200606-c27b9fd57aec
+	golang.org/x/net v0.0.0-20211008194852-3b03d305991f
+	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
+	golang.org/x/text v0.3.7
 )
 
 replace (
