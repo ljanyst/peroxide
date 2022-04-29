@@ -72,7 +72,7 @@ func New(
 		eventListener,
 		clientManager,
 		credStorer,
-		newStoreFactory(cacheProvider, eventListener, cache, builder),
+		NewStoreFactory(cacheProvider, eventListener, cache, builder),
 	)
 
 	b := &Bridge{

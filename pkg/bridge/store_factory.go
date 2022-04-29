@@ -27,7 +27,7 @@ import (
 	"github.com/ljanyst/peroxide/pkg/store/cache"
 )
 
-type storeFactory struct {
+type StoreFactory struct {
 	cacheProvider CacheProvider
 	eventListener listener.Listener
 	events        *store.Events
@@ -35,13 +35,13 @@ type storeFactory struct {
 	builder       *message.Builder
 }
 
-func newStoreFactory(
+func NewStoreFactory(
 	cacheProvider CacheProvider,
 	eventListener listener.Listener,
 	cache cache.Cache,
 	builder *message.Builder,
-) *storeFactory {
-	return &storeFactory{
+) *StoreFactory {
+	return &StoreFactory{
 		cacheProvider: cacheProvider,
 		eventListener: eventListener,
 		events:        store.NewEvents(cacheProvider.GetIMAPCachePath()),
@@ -51,7 +51,7 @@ func newStoreFactory(
 }
 
 // New creates new store for given user.
-func (f *storeFactory) New(user store.BridgeUser) (*store.Store, error) {
+func (f *StoreFactory) New(user store.BridgeUser) (*store.Store, error) {
 	return store.New(
 		user,
 		f.eventListener,
@@ -63,7 +63,7 @@ func (f *storeFactory) New(user store.BridgeUser) (*store.Store, error) {
 }
 
 // Remove removes all store files for given user.
-func (f *storeFactory) Remove(userID string) error {
+func (f *StoreFactory) Remove(userID string) error {
 	return store.RemoveStore(
 		f.events,
 		getUserStorePath(f.cacheProvider.GetDBDir(), userID),
