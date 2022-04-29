@@ -21,15 +21,13 @@ package keychain
 import (
 	"fmt"
 	"sync"
-
-	"github.com/ljanyst/peroxide/pkg/config/settings"
 )
 
 // Version is the keychain data version.
 const Version = "k11"
 
 // NewKeychain creates a new native keychain.
-func NewKeychain(s *settings.Settings, keychainName string) (*Keychain, error) {
+func NewKeychain(keychainName string) (*Keychain, error) {
 	helper, err := newStaticKeychain()
 	if err != nil {
 		return nil, err

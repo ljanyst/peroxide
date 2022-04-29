@@ -81,7 +81,7 @@ func New(configFile string) (*Base, error) {
 	listener := listener.New()
 	events.SetupEvents(listener)
 
-	kc, err := keychain.NewKeychain(settingsObj, "bridge")
+	kc, err := keychain.NewKeychain("bridge")
 	if err != nil {
 		return nil, err
 	}
