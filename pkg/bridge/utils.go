@@ -93,16 +93,7 @@ func LoadMessageCache(s *settings.Settings, cfg *cfgCache.Cache) (cache.Cache, e
 		compressor = &cache.NoopCompressor{}
 	}
 
-	var path string
-
-	if customPath := s.Get(settings.CacheLocationKey); customPath != "" {
-		path = customPath
-	} else {
-		path = cfg.GetDefaultMessageCacheDir()
-		// Store path so it will allways persist if default location
-		// will be changed in new version.
-		s.Set(settings.CacheLocationKey, path)
-	}
+	path := cfg.GetDefaultMessageCacheDir()
 
 	// To prevent memory peaks we set maximal write concurency for store
 	// build jobs.

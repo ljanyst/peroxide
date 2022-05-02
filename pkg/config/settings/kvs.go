@@ -20,7 +20,6 @@ package settings
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -84,7 +83,7 @@ func (p *keyValueStore) save() error {
 
 func (p *keyValueStore) setDefault(key, value string) {
 	if p.Get(key) == "" {
-		p.Set(key, value)
+		p.set(key, value)
 	}
 }
 
@@ -125,7 +124,7 @@ func (p *keyValueStore) GetFloat64(key string) float64 {
 	return value
 }
 
-func (p *keyValueStore) Set(key, value string) {
+func (p *keyValueStore) set(key, value string) {
 	p.lock.Lock()
 	p.cache[key] = value
 	p.lock.Unlock()
@@ -133,20 +132,4 @@ func (p *keyValueStore) Set(key, value string) {
 	if err := p.save(); err != nil {
 		logrus.WithError(err).Warn("Cannot save preferences")
 	}
-}
-
-func (p *keyValueStore) SetBool(key string, value bool) {
-	if value {
-		p.Set(key, "true")
-	} else {
-		p.Set(key, "false")
-	}
-}
-
-func (p *keyValueStore) SetInt(key string, value int) {
-	p.Set(key, strconv.Itoa(value))
-}
-
-func (p *keyValueStore) SetFloat64(key string, value float64) {
-	p.Set(key, fmt.Sprintf("%v", value))
 }

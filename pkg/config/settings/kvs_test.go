@@ -91,27 +91,8 @@ func TestKeyValueStoreSet(t *testing.T) {
 	pref, clean := newTestEmptyKeyValueStore(r)
 	defer clean()
 
-	pref.Set("str", "value")
+	pref.set("str", "value")
 	checkSavedKeyValueStore(r, pref.path, "{\n\t\"str\": \"value\"\n}")
-}
-
-func TestKeyValueStoreSetInt(t *testing.T) {
-	r := require.New(t)
-	pref, clean := newTestEmptyKeyValueStore(r)
-	defer clean()
-
-	pref.SetInt("int", 42)
-	checkSavedKeyValueStore(r, pref.path, "{\n\t\"int\": \"42\"\n}")
-}
-
-func TestKeyValueStoreSetBool(t *testing.T) {
-	r := require.New(t)
-	pref, clean := newTestEmptyKeyValueStore(r)
-	defer clean()
-
-	pref.SetBool("trueBool", true)
-	pref.SetBool("falseBool", false)
-	checkSavedKeyValueStore(r, pref.path, "{\n\t\"falseBool\": \"false\",\n\t\"trueBool\": \"true\"\n}")
 }
 
 func newTmpFile(r *require.Assertions) (path string, clean func()) {

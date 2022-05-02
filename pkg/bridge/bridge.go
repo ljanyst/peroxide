@@ -61,7 +61,6 @@ type Bridge struct {
 
 func (b *Bridge) Configure(configFile string) error {
 	rand.Seed(time.Now().UnixNano())
-	os.Args = StripProcessSerialNumber(os.Args)
 
 	if err := logging.Init(); err != nil {
 		return err
@@ -102,9 +101,6 @@ func (b *Bridge) Configure(configFile string) error {
 	}
 
 	cm.SetCookieJar(jar)
-
-	// GODT-1481: Always turn off reporting of unencrypted recipient in v2.
-	settingsObj.SetBool(settings.ReportOutgoingNoEncKey, false)
 
 	cache, err := LoadMessageCache(settingsObj, cacheConf)
 	if err != nil {
@@ -180,62 +176,4 @@ func (b *Bridge) FactoryReset() {
 	if err := b.Users.ClearUsers(); err != nil {
 		log.WithError(err).Error("Failed to remove bridge users")
 	}
-}
-
-// GetKeychainApp returns current keychain helper.
-func (b *Bridge) GetKeychainApp() string {
-	return b.settings.Get(settings.PreferredKeychainKey)
-}
-
-// SetKeychainApp sets current keychain helper.
-func (b *Bridge) SetKeychainApp(helper string) {
-	b.settings.Set(settings.PreferredKeychainKey, helper)
-}
-
-func (b *Bridge) EnableCache() error {
-	if err := b.Users.EnableCache(); err != nil {
-		return err
-	}
-
-	b.settings.SetBool(settings.CacheEnabledKey, true)
-
-	return nil
-}
-
-func (b *Bridge) DisableCache() error {
-	if err := b.Users.DisableCache(); err != nil {
-		return err
-	}
-
-	b.settings.SetBool(settings.CacheEnabledKey, false)
-	// Reset back to the default location when disabling.
-	b.settings.Set(settings.CacheLocationKey, b.cacheProvider.GetDefaultMessageCacheDir())
-
-	return nil
-}
-
-func (b *Bridge) MigrateCache(from, to string) error {
-	if err := b.Users.MigrateCache(from, to); err != nil {
-		return err
-	}
-
-	b.settings.Set(settings.CacheLocationKey, to)
-
-	return nil
-}
-
-// SetProxyAllowed instructs the app whether to use DoH to access an API proxy if necessary.
-// It also needs to work before the app is initialised (because we may need to use the proxy at startup).
-func (b *Bridge) SetProxyAllowed(proxyAllowed bool) {
-	b.settings.SetBool(settings.AllowProxyKey, proxyAllowed)
-	if proxyAllowed {
-		b.clientManager.AllowProxy()
-	} else {
-		b.clientManager.DisallowProxy()
-	}
-}
-
-// GetProxyAllowed returns whether use of DoH is enabled to access an API proxy if necessary.
-func (b *Bridge) GetProxyAllowed() bool {
-	return b.settings.GetBool(settings.AllowProxyKey)
 }

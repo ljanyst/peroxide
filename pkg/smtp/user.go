@@ -32,14 +32,12 @@ import (
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	goSMTPBackend "github.com/emersion/go-smtp"
-	"github.com/ljanyst/peroxide/pkg/events"
 	"github.com/ljanyst/peroxide/pkg/listener"
 	pkgMsg "github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/message/parser"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/ljanyst/peroxide/pkg/users"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 type smtpUser struct {
@@ -385,15 +383,9 @@ func (su *smtpUser) Send(returnPath string, to []string, messageReader io.Reader
 
 	if containsUnencryptedRecipients {
 		dec := new(mime.WordDecoder)
-		subject, err := dec.DecodeHeader(message.Header.Get("Subject"))
+		_, err := dec.DecodeHeader(message.Header.Get("Subject"))
 		if err != nil {
 			return errors.New("error decoding subject message " + message.Header.Get("Subject"))
-		}
-		if !su.continueSendingUnencryptedMail(subject) {
-			if err := su.client().DeleteMessages(context.TODO(), []string{message.ID}); err != nil {
-				log.WithError(err).Warn("Failed to delete canceled messages")
-			}
-			return errors.New("sending was canceled by user")
 		}
 	}
 
@@ -503,27 +495,6 @@ func (su *smtpUser) handleSenderAndRecipients(m *pmapi.Message, returnPathAddr *
 	}
 
 	return nil
-}
-
-func (su *smtpUser) continueSendingUnencryptedMail(subject string) bool {
-	if !su.backend.shouldReportOutgoingNoEnc() {
-		return true
-	}
-
-	// GUI should always respond in 10 seconds, but let's have safety timeout
-	// in case GUI will not respond properly. If GUI didn't respond, we cannot
-	// be sure if user even saw the notice: better to not send the e-mail.
-	req := su.backend.confirmer.NewRequest(15 * time.Second)
-
-	su.eventListener.Emit(events.OutgoingNoEncEvent, req.ID()+":"+subject)
-
-	res, err := req.Result()
-	if err != nil {
-		logrus.WithError(err).Error("Failed to determine whether to send unencrypted, assuming no")
-		return false
-	}
-
-	return res
 }
 
 // Logout is called when this User will no longer be used.

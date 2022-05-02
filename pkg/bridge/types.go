@@ -31,8 +31,6 @@ type CacheProvider interface {
 
 type SettingsProvider interface {
 	Get(key string) string
-	Set(key string, value string)
 	GetBool(key string) bool
-	SetBool(key string, val bool)
 	GetInt(key string) int
 }
