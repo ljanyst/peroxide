@@ -22,12 +22,9 @@ import (
 	"time"
 
 	goSMTPBackend "github.com/emersion/go-smtp"
-	"github.com/ljanyst/peroxide/pkg/config/settings"
-	"github.com/ljanyst/peroxide/pkg/confirmer"
 	"github.com/ljanyst/peroxide/pkg/listener"
 	"github.com/ljanyst/peroxide/pkg/users"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 type settingsProvider interface {
@@ -38,7 +35,6 @@ type smtpBackend struct {
 	eventListener listener.Listener
 	settings      settingsProvider
 	users         *users.Users
-	confirmer     *confirmer.Confirmer
 	sendRecorder  *sendRecorder
 }
 
@@ -60,7 +56,6 @@ func newSMTPBackend(
 		eventListener: eventListener,
 		settings:      settings,
 		users:         users,
-		confirmer:     confirmer.New(),
 		sendRecorder:  newSendRecorder(),
 	}
 }
@@ -96,14 +91,4 @@ func (sb *smtpBackend) Login(_ *goSMTPBackend.ConnectionState, username, passwor
 
 func (sb *smtpBackend) AnonymousLogin(_ *goSMTPBackend.ConnectionState) (goSMTPBackend.Session, error) {
 	return nil, errors.New("anonymous login not supported")
-}
-
-func (sb *smtpBackend) shouldReportOutgoingNoEnc() bool {
-	return sb.settings.GetBool(settings.ReportOutgoingNoEncKey)
-}
-
-func (sb *smtpBackend) ConfirmNoEncryption(messageID string, shouldSend bool) {
-	if err := sb.confirmer.SetResult(messageID, shouldSend); err != nil {
-		logrus.WithError(err).Error("Failed to set confirmation value")
-	}
 }
