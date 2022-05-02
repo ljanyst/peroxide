@@ -27,7 +27,6 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/ljanyst/peroxide/pkg/events"
 	"github.com/ljanyst/peroxide/pkg/listener"
-	"github.com/ljanyst/peroxide/pkg/metrics"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/ljanyst/peroxide/pkg/users/credentials"
 	"github.com/pkg/errors"
@@ -270,10 +269,6 @@ func (u *Users) addNewUser(client pmapi.Client, apiUser *pmapi.User, auth *pmapi
 		return errors.Wrap(err, "failed to connect new user")
 	}
 
-	if err := u.SendMetric(metrics.New(metrics.Setup, metrics.NewUser, metrics.NoLabel)); err != nil {
-		log.WithError(err).Error("Failed to send metric")
-	}
-
 	u.users = append(u.users, user)
 
 	return nil
@@ -401,23 +396,6 @@ func (u *Users) ClearUsers() error {
 	}
 
 	return result
-}
-
-// SendMetric sends a metric. We don't want to return any errors, only log them.
-func (u *Users) SendMetric(m metrics.Metric) error {
-	cat, act, lab := m.Get()
-
-	if err := u.clientManager.SendSimpleMetric(context.Background(), string(cat), string(act), string(lab)); err != nil {
-		return err
-	}
-
-	log.WithFields(logrus.Fields{
-		"cat": cat,
-		"act": act,
-		"lab": lab,
-	}).Debug("Metric successfully sent")
-
-	return nil
 }
 
 // hasUser returns whether the struct currently has a user with ID `id`.

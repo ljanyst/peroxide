@@ -670,21 +670,6 @@ func (mr *MockManagerMockRecorder) DisallowProxy() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DisallowProxy", reflect.TypeOf((*MockManager)(nil).DisallowProxy))
 }
 
-// DownloadAndVerify mocks base method.
-func (m *MockManager) DownloadAndVerify(arg0 *crypto.KeyRing, arg1, arg2 string) ([]byte, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DownloadAndVerify", arg0, arg1, arg2)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DownloadAndVerify indicates an expected call of DownloadAndVerify.
-func (mr *MockManagerMockRecorder) DownloadAndVerify(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadAndVerify", reflect.TypeOf((*MockManager)(nil).DownloadAndVerify), arg0, arg1, arg2)
-}
-
 // NewClient mocks base method.
 func (m *MockManager) NewClient(arg0, arg1, arg2 string, arg3 time.Time) pmapi.Client {
 	m.ctrl.T.Helper()
@@ -729,20 +714,6 @@ func (m *MockManager) NewClientWithRefresh(arg0 context.Context, arg1, arg2 stri
 func (mr *MockManagerMockRecorder) NewClientWithRefresh(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewClientWithRefresh", reflect.TypeOf((*MockManager)(nil).NewClientWithRefresh), arg0, arg1, arg2)
-}
-
-// SendSimpleMetric mocks base method.
-func (m *MockManager) SendSimpleMetric(arg0 context.Context, arg1, arg2, arg3 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendSimpleMetric", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendSimpleMetric indicates an expected call of SendSimpleMetric.
-func (mr *MockManagerMockRecorder) SendSimpleMetric(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendSimpleMetric", reflect.TypeOf((*MockManager)(nil).SendSimpleMetric), arg0, arg1, arg2, arg3)
 }
 
 // SetCookieJar mocks base method.

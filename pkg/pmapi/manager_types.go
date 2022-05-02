@@ -22,7 +22,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,9 +29,6 @@ type Manager interface {
 	NewClient(string, string, string, time.Time) Client
 	NewClientWithRefresh(context.Context, string, string) (Client, *AuthRefresh, error)
 	NewClientWithLogin(context.Context, string, []byte) (Client, *Auth, error)
-
-	DownloadAndVerify(kr *crypto.KeyRing, url, sig string) ([]byte, error)
-	SendSimpleMetric(context.Context, string, string, string) error
 
 	SetLogging(logger *logrus.Entry, verbose bool)
 	SetTransport(http.RoundTripper)
