@@ -141,7 +141,7 @@ func (b *Bridge) Run() error {
 	}
 
 	imapBackend := imap.NewIMAPBackend(b.listener, b.cacheProvider, b.settings, b.Users)
-	smtpBackend := smtp.NewSMTPBackend(b.listener, b.settings, b.Users)
+	smtpBackend := smtp.NewSMTPBackend(b.listener, b.Users)
 
 	go func() {
 		imapPort := b.settings.GetInt(settings.IMAPPortKey)

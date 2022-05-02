@@ -27,13 +27,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-type settingsProvider interface {
-	GetBool(string) bool
-}
-
 type smtpBackend struct {
 	eventListener listener.Listener
-	settings      settingsProvider
 	users         *users.Users
 	sendRecorder  *sendRecorder
 }
@@ -41,20 +36,17 @@ type smtpBackend struct {
 // NewSMTPBackend returns struct implementing go-smtp/backend interface.
 func NewSMTPBackend(
 	eventListener listener.Listener,
-	settings settingsProvider,
 	users *users.Users,
 ) *smtpBackend { //nolint[golint]
-	return newSMTPBackend(eventListener, settings, users)
+	return newSMTPBackend(eventListener, users)
 }
 
 func newSMTPBackend(
 	eventListener listener.Listener,
-	settings settingsProvider,
 	users *users.Users,
 ) *smtpBackend {
 	return &smtpBackend{
 		eventListener: eventListener,
-		settings:      settings,
 		users:         users,
 		sendRecorder:  newSendRecorder(),
 	}
