@@ -17,25 +17,12 @@
 
 package pmapi
 
-import (
-	"runtime"
-	"strings"
-)
-
 type Config struct {
 	// HostURL is the base URL of API.
 	HostURL string
 
 	// AppVersion sets version to headers of each request.
 	AppVersion string
-
-	// UserAgent sets user agent to headers of each request.
-	// Used only if GetUserAgent is not set.
-	UserAgent string
-
-	// GetUserAgent is dynamic version of UserAgent.
-	// Overrides UserAgent.
-	GetUserAgent func() string
 
 	// UpgradeApplicationHandler is used to notify when there is a force upgrade.
 	UpgradeApplicationHandler func()
@@ -44,29 +31,13 @@ type Config struct {
 	TLSIssueHandler func()
 }
 
-func NewConfig(appVersionName, appVersion string) Config {
+func NewConfig() Config {
 	return Config{
 		HostURL:    getRootURL(),
-		AppVersion: getAPIOS() + strings.Title(appVersionName) + "_" + appVersion,
+		AppVersion: "LinuxBridge_1000.1000.1000+git",
 	}
 }
 
 func (c *Config) getUserAgent() string {
-	if c.GetUserAgent == nil {
-		return c.UserAgent
-	}
-	return c.GetUserAgent()
-}
-
-// getAPIOS returns actual operating system.
-func getAPIOS() string {
-	switch os := runtime.GOOS; os {
-	case "darwin": // nolint: goconst
-		return "macOS"
-	case "linux":
-		return "Linux"
-	case "windows":
-		return "Windows"
-	}
-	return "Linux"
+	return "UnknownClient/0.0.1"
 }

@@ -25,7 +25,6 @@ import (
 	"strings"
 	"time"
 
-	imapid "github.com/ProtonMail/go-imap-id"
 	"github.com/emersion/go-imap"
 	imapappendlimit "github.com/emersion/go-imap-appendlimit"
 	imapmove "github.com/emersion/go-imap-move"
@@ -34,8 +33,6 @@ import (
 	"github.com/emersion/go-imap/backend"
 	imapserver "github.com/emersion/go-imap/server"
 	"github.com/emersion/go-sasl"
-	"github.com/ljanyst/peroxide/pkg/config/useragent"
-	"github.com/ljanyst/peroxide/pkg/imap/id"
 	"github.com/ljanyst/peroxide/pkg/imap/idle"
 	"github.com/ljanyst/peroxide/pkg/imap/uidplus"
 	"github.com/ljanyst/peroxide/pkg/listener"
@@ -44,7 +41,6 @@ import (
 
 // Server takes care of IMAP listening serving. It implements serverutil.Server.
 type Server struct {
-	userAgent   *useragent.UserAgent
 	debugClient bool
 	debugServer bool
 	port        int
@@ -59,34 +55,26 @@ func NewIMAPServer(
 	port int,
 	tls *tls.Config,
 	imapBackend backend.Backend,
-	userAgent *useragent.UserAgent,
 	eventListener listener.Listener,
 ) *Server {
 	server := &Server{
-		userAgent:   userAgent,
 		debugClient: debugClient,
 		debugServer: debugServer,
 		port:        port,
 	}
 
-	server.server = newGoIMAPServer(tls, imapBackend, server.Address(), userAgent)
+	server.server = newGoIMAPServer(tls, imapBackend, server.Address())
 	server.controller = serverutil.NewController(server, eventListener)
 	return server
 }
 
-func newGoIMAPServer(tls *tls.Config, backend backend.Backend, address string, userAgent *useragent.UserAgent) *imapserver.Server {
+func newGoIMAPServer(tls *tls.Config, backend backend.Backend, address string) *imapserver.Server {
 	server := imapserver.New(backend)
 	server.TLSConfig = tls
 	server.AllowInsecureAuth = true
 	server.ErrorLog = serverutil.NewServerErrorLogger(serverutil.IMAP)
 	server.AutoLogout = 30 * time.Minute
 	server.Addr = address
-
-	serverID := imapid.ID{
-		imapid.FieldName:       "ProtonMail Bridge",
-		imapid.FieldVendor:     "Proton Technologies AG",
-		imapid.FieldSupportURL: "https://protonmail.com/support",
-	}
 
 	server.EnableAuth(sasl.Login, func(conn imapserver.Conn) sasl.Server {
 		return sasl.NewLoginServer(func(address, password string) error {
@@ -105,7 +93,6 @@ func newGoIMAPServer(tls *tls.Config, backend backend.Backend, address string, u
 	server.Enable(
 		idle.NewExtension(),
 		imapmove.NewExtension(),
-		id.NewExtension(serverID, userAgent),
 		imapquota.NewExtension(),
 		imapappendlimit.NewExtension(),
 		imapunselect.NewExtension(),
@@ -133,10 +120,6 @@ func (s *Server) DebugClient() bool { return s.debugClient }
 
 func (s *Server) SetLoggers(localDebug, remoteDebug io.Writer) {
 	s.server.Debug = imap.NewDebugWriter(localDebug, remoteDebug)
-
-	if !s.userAgent.HasClient() {
-		s.userAgent.SetClient("UnknownClient", "0.0.1")
-	}
 }
 
 func (s *Server) DisconnectUser(address string) {

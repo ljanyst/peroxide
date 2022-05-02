@@ -29,8 +29,6 @@ import (
 	cacheCfg "github.com/ljanyst/peroxide/pkg/config/cache"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
 	"github.com/ljanyst/peroxide/pkg/config/tls"
-	"github.com/ljanyst/peroxide/pkg/config/useragent"
-	"github.com/ljanyst/peroxide/pkg/constants"
 	"github.com/ljanyst/peroxide/pkg/cookies"
 	"github.com/ljanyst/peroxide/pkg/events"
 	"github.com/ljanyst/peroxide/pkg/imap"
@@ -59,12 +57,9 @@ type Bridge struct {
 	cacheProvider *cacheCfg.Cache
 	cache         cache.Cache
 	listener      listener.Listener
-	userAgent     *useragent.UserAgent
 }
 
 func (b *Bridge) Configure(configFile string) error {
-	userAgent := useragent.New()
-
 	rand.Seed(time.Now().UnixNano())
 	os.Args = StripProcessSerialNumber(os.Args)
 
@@ -90,8 +85,7 @@ func (b *Bridge) Configure(configFile string) error {
 		return err
 	}
 
-	cfg := pmapi.NewConfig("bridge", constants.Version)
-	cfg.GetUserAgent = userAgent.String
+	cfg := pmapi.NewConfig()
 	cfg.UpgradeApplicationHandler = func() { listener.Emit(events.UpgradeApplicationEvent, "") }
 	cfg.TLSIssueHandler = func() { listener.Emit(events.TLSCertIssue, "") }
 
@@ -139,7 +133,6 @@ func (b *Bridge) Configure(configFile string) error {
 	b.cacheProvider = cacheConf
 	b.cache = cache
 	b.listener = listener
-	b.userAgent = userAgent
 	return nil
 }
 
@@ -159,7 +152,7 @@ func (b *Bridge) Run() error {
 		imap.NewIMAPServer(
 			false, // log client
 			false, // log server
-			imapPort, tlsConfig, imapBackend, b.userAgent, b.listener).ListenAndServe()
+			imapPort, tlsConfig, imapBackend, b.listener).ListenAndServe()
 	}()
 
 	go func() {

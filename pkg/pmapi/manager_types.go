@@ -32,7 +32,6 @@ type Manager interface {
 	NewClientWithLogin(context.Context, string, []byte) (Client, *Auth, error)
 
 	DownloadAndVerify(kr *crypto.KeyRing, url, sig string) ([]byte, error)
-	ReportBug(context.Context, ReportBugReq) error
 	SendSimpleMetric(context.Context, string, string, string) error
 
 	SetLogging(logger *logrus.Entry, verbose bool)

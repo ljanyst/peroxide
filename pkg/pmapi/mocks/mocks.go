@@ -12,8 +12,8 @@ import (
 	time "time"
 
 	crypto "github.com/ProtonMail/gopenpgp/v2/crypto"
-	pmapi "github.com/ljanyst/peroxide/pkg/pmapi"
 	gomock "github.com/golang/mock/gomock"
+	pmapi "github.com/ljanyst/peroxide/pkg/pmapi"
 	logrus "github.com/sirupsen/logrus"
 )
 
@@ -729,20 +729,6 @@ func (m *MockManager) NewClientWithRefresh(arg0 context.Context, arg1, arg2 stri
 func (mr *MockManagerMockRecorder) NewClientWithRefresh(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewClientWithRefresh", reflect.TypeOf((*MockManager)(nil).NewClientWithRefresh), arg0, arg1, arg2)
-}
-
-// ReportBug mocks base method.
-func (m *MockManager) ReportBug(arg0 context.Context, arg1 pmapi.ReportBugReq) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReportBug", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ReportBug indicates an expected call of ReportBug.
-func (mr *MockManagerMockRecorder) ReportBug(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportBug", reflect.TypeOf((*MockManager)(nil).ReportBug), arg0, arg1)
 }
 
 // SendSimpleMetric mocks base method.
