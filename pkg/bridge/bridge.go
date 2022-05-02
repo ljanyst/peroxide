@@ -20,18 +20,29 @@ package bridge
 
 import (
 	"errors"
-	"fmt"
-	"strconv"
+	"math/rand"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
+	cacheCfg "github.com/ljanyst/peroxide/pkg/config/cache"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
+	"github.com/ljanyst/peroxide/pkg/config/tls"
+	"github.com/ljanyst/peroxide/pkg/config/useragent"
 	"github.com/ljanyst/peroxide/pkg/constants"
+	"github.com/ljanyst/peroxide/pkg/cookies"
+	"github.com/ljanyst/peroxide/pkg/events"
+	"github.com/ljanyst/peroxide/pkg/imap"
+	"github.com/ljanyst/peroxide/pkg/keychain"
 	"github.com/ljanyst/peroxide/pkg/listener"
+	"github.com/ljanyst/peroxide/pkg/logging"
 	"github.com/ljanyst/peroxide/pkg/message"
-	"github.com/ljanyst/peroxide/pkg/metrics"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/smtp"
 	"github.com/ljanyst/peroxide/pkg/store/cache"
 	"github.com/ljanyst/peroxide/pkg/users"
+	"github.com/ljanyst/peroxide/pkg/users/credentials"
 
 	logrus "github.com/sirupsen/logrus"
 )
@@ -41,87 +52,129 @@ var log = logrus.WithField("pkg", "bridge") //nolint[gochecknoglobals]
 var ErrLocalCacheUnavailable = errors.New("local cache is unavailable")
 
 type Bridge struct {
-	*users.Users
+	Users *users.Users
 
 	settings      SettingsProvider
 	clientManager pmapi.Manager
-	cacheProvider CacheProvider
-	// Bridge's global errors list.
-	errors []error
-
-	isFirstStart bool
-	lastVersion  string
+	cacheProvider *cacheCfg.Cache
+	cache         cache.Cache
+	listener      listener.Listener
+	userAgent     *useragent.UserAgent
 }
 
-func New(
-	cacheProvider CacheProvider,
-	setting SettingsProvider,
-	eventListener listener.Listener,
-	cache cache.Cache,
-	builder *message.Builder,
-	clientManager pmapi.Manager,
-	credStorer users.CredentialsStorer,
-) *Bridge {
-	// Allow DoH before starting the app if the user has previously set this setting.
-	// This allows us to start even if protonmail is blocked.
-	if setting.GetBool(settings.AllowProxyKey) {
-		clientManager.AllowProxy()
+func (b *Bridge) Configure(configFile string) error {
+	userAgent := useragent.New()
+
+	rand.Seed(time.Now().UnixNano())
+	os.Args = StripProcessSerialNumber(os.Args)
+
+	if err := logging.Init(); err != nil {
+		return err
+	}
+
+	settingsObj := settings.New(configFile)
+
+	cacheConf, err := cacheCfg.New(settingsObj.Get(settings.CacheDir), "c11")
+	if err != nil {
+		return err
+	}
+	if err := cacheConf.RemoveOldVersions(); err != nil {
+		return err
+	}
+
+	listener := listener.New()
+	events.SetupEvents(listener)
+
+	kc, err := keychain.NewKeychain("bridge")
+	if err != nil {
+		return err
+	}
+
+	cfg := pmapi.NewConfig("bridge", constants.Version)
+	cfg.GetUserAgent = userAgent.String
+	cfg.UpgradeApplicationHandler = func() { listener.Emit(events.UpgradeApplicationEvent, "") }
+	cfg.TLSIssueHandler = func() { listener.Emit(events.TLSCertIssue, "") }
+
+	cm := pmapi.New(cfg)
+
+	cm.AddConnectionObserver(pmapi.NewConnectionObserver(
+		func() { listener.Emit(events.InternetOffEvent, "") },
+		func() { listener.Emit(events.InternetOnEvent, "") },
+	))
+
+	jar, err := cookies.NewCookieJar(settingsObj.Get(settings.CookieJar))
+	if err != nil {
+		return err
+	}
+
+	cm.SetCookieJar(jar)
+
+	// GODT-1481: Always turn off reporting of unencrypted recipient in v2.
+	settingsObj.SetBool(settings.ReportOutgoingNoEncKey, false)
+
+	cache, err := LoadMessageCache(settingsObj, cacheConf)
+	if err != nil {
+		return err
+	}
+
+	builder := message.NewBuilder(
+		settingsObj.GetInt(settings.FetchWorkers),
+		settingsObj.GetInt(settings.AttachmentWorkers),
+	)
+
+	if settingsObj.GetBool(settings.AllowProxyKey) {
+		cm.AllowProxy()
 	}
 
 	u := users.New(
-		eventListener,
-		clientManager,
-		credStorer,
-		NewStoreFactory(cacheProvider, eventListener, cache, builder),
+		listener,
+		cm,
+		credentials.NewStore(kc),
+		NewStoreFactory(cacheConf, listener, cache, builder),
 	)
 
-	b := &Bridge{
-		Users:         u,
-		settings:      setting,
-		clientManager: clientManager,
-		cacheProvider: cacheProvider,
-		isFirstStart:  false,
-	}
-
-	if setting.GetBool(settings.FirstStartKey) {
-		b.isFirstStart = true
-		if err := b.SendMetric(metrics.New(metrics.Setup, metrics.FirstStart, metrics.Label(constants.Version))); err != nil {
-			logrus.WithError(err).Error("Failed to send metric")
-		}
-		setting.SetBool(settings.FirstStartKey, false)
-	}
-
-	// Keep in bridge and update in settings the last used version.
-	b.lastVersion = b.settings.Get(settings.LastVersionKey)
-	b.settings.Set(settings.LastVersionKey, constants.Version)
-
-	go b.heartbeat()
-
-	return b
+	b.Users = u
+	b.settings = settingsObj
+	b.clientManager = cm
+	b.cacheProvider = cacheConf
+	b.cache = cache
+	b.listener = listener
+	b.userAgent = userAgent
+	return nil
 }
 
-// heartbeat sends a heartbeat signal once a day.
-func (b *Bridge) heartbeat() {
-	for range time.Tick(time.Minute) {
-		lastHeartbeatDay, err := strconv.ParseInt(b.settings.Get(settings.LastHeartbeatKey), 10, 64)
-		if err != nil {
-			continue
-		}
+func (b *Bridge) Run() error {
+	tlsCfg := tls.New(b.settings.Get(settings.TLSDir))
 
-		// If we're still on the same day, don't send a heartbeat.
-		if time.Now().YearDay() == int(lastHeartbeatDay) {
-			continue
-		}
-
-		// We're on the next (or a different) day, so send a heartbeat.
-		if err := b.SendMetric(metrics.New(metrics.Heartbeat, metrics.Daily, metrics.NoLabel)); err != nil {
-			logrus.WithError(err).Error("Failed to send heartbeat")
-			continue
-		}
-
-		// Heartbeat was sent successfully so update the last heartbeat day.
-		b.settings.Set(settings.LastHeartbeatKey, fmt.Sprintf("%v", time.Now().YearDay()))
+	tlsConfig, err := loadTLSConfig(tlsCfg)
+	if err != nil {
+		return err
 	}
+
+	imapBackend := imap.NewIMAPBackend(b.listener, b.cacheProvider, b.settings, b.Users)
+	smtpBackend := smtp.NewSMTPBackend(b.listener, b.settings, b.Users)
+
+	go func() {
+		imapPort := b.settings.GetInt(settings.IMAPPortKey)
+		imap.NewIMAPServer(
+			false, // log client
+			false, // log server
+			imapPort, tlsConfig, imapBackend, b.userAgent, b.listener).ListenAndServe()
+	}()
+
+	go func() {
+		smtpPort := b.settings.GetInt(settings.SMTPPortKey)
+		useSSL := b.settings.GetBool(settings.SMTPSSLKey)
+		smtp.NewSMTPServer(
+			false,
+			smtpPort, useSSL, tlsConfig, smtpBackend, b.listener).ListenAndServe()
+	}()
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
+	<-done
+
+	return nil
 }
 
 // FactoryReset will remove all local cache and settings.
@@ -192,49 +245,4 @@ func (b *Bridge) SetProxyAllowed(proxyAllowed bool) {
 // GetProxyAllowed returns whether use of DoH is enabled to access an API proxy if necessary.
 func (b *Bridge) GetProxyAllowed() bool {
 	return b.settings.GetBool(settings.AllowProxyKey)
-}
-
-// AddError add an error to a global error list if it does not contain it yet. Adding nil is noop.
-func (b *Bridge) AddError(err error) {
-	if err == nil {
-		return
-	}
-	if b.HasError(err) {
-		return
-	}
-
-	b.errors = append(b.errors, err)
-}
-
-// DelError removes an error from global error list.
-func (b *Bridge) DelError(err error) {
-	for idx, val := range b.errors {
-		if val == err {
-			b.errors = append(b.errors[:idx], b.errors[idx+1:]...)
-			return
-		}
-	}
-}
-
-// HasError returnes true if global error list contains an err.
-func (b *Bridge) HasError(err error) bool {
-	for _, val := range b.errors {
-		if val == err {
-			return true
-		}
-	}
-
-	return false
-}
-
-// GetLastVersion returns the version which was used in previous execution of
-// Bridge.
-func (b *Bridge) GetLastVersion() string {
-	return b.lastVersion
-}
-
-// IsFirstStart returns true when Bridge is running for first time or after
-// factory reset.
-func (b *Bridge) IsFirstStart() bool {
-	return b.isFirstStart
 }

@@ -20,12 +20,13 @@ package imap
 import (
 	"bytes"
 
-	"github.com/ljanyst/peroxide/pkg/message"
 	"github.com/emersion/go-imap"
+	"github.com/ljanyst/peroxide/pkg/message"
+	"github.com/ljanyst/peroxide/pkg/store"
 	"github.com/pkg/errors"
 )
 
-func (im *imapMailbox) getMessage(storeMessage storeMessageProvider, items []imap.FetchItem) (msg *imap.Message, err error) {
+func (im *imapMailbox) getMessage(storeMessage *store.Message, items []imap.FetchItem) (msg *imap.Message, err error) {
 	msglog := im.log.WithField("msgID", storeMessage.ID())
 	msglog.Trace("Getting message")
 
@@ -83,7 +84,7 @@ func (im *imapMailbox) getMessage(storeMessage storeMessageProvider, items []ima
 	return msg, err
 }
 
-func (im *imapMailbox) getLiteralForSection(itemSection imap.FetchItem, msg *imap.Message, storeMessage storeMessageProvider) error {
+func (im *imapMailbox) getLiteralForSection(itemSection imap.FetchItem, msg *imap.Message, storeMessage *store.Message) error {
 	section, err := imap.ParseBodySectionName(itemSection)
 	if err != nil {
 		log.WithError(err).Warn("Failed to parse body section name; part will be skipped")
@@ -105,7 +106,7 @@ func (im *imapMailbox) getLiteralForSection(itemSection imap.FetchItem, msg *ima
 // Apple Mail requests body structure for all messages irregularly. We cache
 // bodystructure in local database in order to not re-download all messages
 // from server.
-func (im *imapMailbox) getBodyStructure(storeMessage storeMessageProvider) (bs *message.BodyStructure, err error) {
+func (im *imapMailbox) getBodyStructure(storeMessage *store.Message) (bs *message.BodyStructure, err error) {
 	bs, err = storeMessage.GetBodyStructure()
 	if err != nil {
 		im.log.WithError(err).Debug("Fail to retrieve bodystructure from database")
@@ -123,7 +124,7 @@ func (im *imapMailbox) getBodyStructure(storeMessage storeMessageProvider) (bs *
 	return
 }
 
-func (im *imapMailbox) getBodyAndStructure(storeMessage storeMessageProvider) (*message.BodyStructure, *bytes.Reader, error) {
+func (im *imapMailbox) getBodyAndStructure(storeMessage *store.Message) (*message.BodyStructure, *bytes.Reader, error) {
 	rfc822, err := storeMessage.GetRFC822()
 	if err != nil {
 		return nil, nil, err
@@ -150,7 +151,7 @@ func (im *imapMailbox) getBodyAndStructure(storeMessage storeMessageProvider) (*
 // For all other cases it is necessary to download and decrypt the message
 // and drop the header which was obtained from cache. The header will
 // will be stored in DB once successfully built. Check `getBodyAndStructure`.
-func (im *imapMailbox) getMessageBodySection(storeMessage storeMessageProvider, section *imap.BodySectionName) (imap.Literal, error) {
+func (im *imapMailbox) getMessageBodySection(storeMessage *store.Message, section *imap.BodySectionName) (imap.Literal, error) {
 	var header []byte
 	var response []byte
 

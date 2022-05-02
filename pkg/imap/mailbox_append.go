@@ -32,6 +32,7 @@ import (
 	"github.com/ljanyst/peroxide/pkg/imap/uidplus"
 	"github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/store"
 	"github.com/pkg/errors"
 )
 
@@ -81,7 +82,7 @@ func (im *imapMailbox) createMessage(imapFlags []string, date time.Time, r imap.
 			m.Sender = &mail.Address{Address: addr.Email}
 		}
 
-		if user, err := im.user.backend.bridge.GetUser(pmapi.SanitizeEmail(m.Sender.Address)); err == nil && user.ID() == im.storeUser.UserID() {
+		if user, err := im.user.backend.usersMgr.GetUser(pmapi.SanitizeEmail(m.Sender.Address)); err == nil && user.ID() == im.storeUser.UserID() {
 			logEntry := im.log.WithField("sender", m.Sender).WithField("extID", m.Header.Get("Message-Id")).WithField("date", date)
 
 			if foundUID := im.storeMailbox.GetUIDByHeader(&m.Header); foundUID != uint32(0) {
@@ -143,7 +144,7 @@ func (im *imapMailbox) createDraftMessage(kr *crypto.KeyRing, email string, body
 	return uidplus.AppendResponse(im.storeMailbox.UIDValidity(), im.storeMailbox.GetUIDList([]string{draft.ID}))
 }
 
-func findMailboxForAddress(address storeAddressProvider, labelID string) (storeMailboxProvider, error) {
+func findMailboxForAddress(address *store.Address, labelID string) (*store.Mailbox, error) {
 	for _, mailBox := range address.ListMailboxes() {
 		if mailBox.LabelID() == labelID {
 			return mailBox, nil
@@ -153,7 +154,7 @@ func findMailboxForAddress(address storeAddressProvider, labelID string) (storeM
 		address.AddressString())
 }
 
-func (im *imapMailbox) labelExistingMessage(msg storeMessageProvider) error { //nolint[funlen]
+func (im *imapMailbox) labelExistingMessage(msg *store.Message) error { //nolint[funlen]
 	im.log.Info("Labelling existing message")
 
 	// IMAP clients can move message to local folder (setting \Deleted flag)

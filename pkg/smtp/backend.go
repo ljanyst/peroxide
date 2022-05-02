@@ -22,7 +22,6 @@ import (
 	"time"
 
 	goSMTPBackend "github.com/emersion/go-smtp"
-	"github.com/ljanyst/peroxide/pkg/bridge"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
 	"github.com/ljanyst/peroxide/pkg/confirmer"
 	"github.com/ljanyst/peroxide/pkg/listener"
@@ -38,7 +37,7 @@ type settingsProvider interface {
 type smtpBackend struct {
 	eventListener listener.Listener
 	settings      settingsProvider
-	bridge        bridger
+	users         *users.Users
 	confirmer     *confirmer.Confirmer
 	sendRecorder  *sendRecorder
 }
@@ -47,20 +46,20 @@ type smtpBackend struct {
 func NewSMTPBackend(
 	eventListener listener.Listener,
 	settings settingsProvider,
-	bridge *bridge.Bridge,
+	users *users.Users,
 ) *smtpBackend { //nolint[golint]
-	return newSMTPBackend(eventListener, settings, newBridgeWrap(bridge))
+	return newSMTPBackend(eventListener, settings, users)
 }
 
 func newSMTPBackend(
 	eventListener listener.Listener,
 	settings settingsProvider,
-	bridge bridger,
+	users *users.Users,
 ) *smtpBackend {
 	return &smtpBackend{
 		eventListener: eventListener,
 		settings:      settings,
-		bridge:        bridge,
+		users:         users,
 		confirmer:     confirmer.New(),
 		sendRecorder:  newSendRecorder(),
 	}
@@ -68,13 +67,9 @@ func newSMTPBackend(
 
 // Login authenticates a user.
 func (sb *smtpBackend) Login(_ *goSMTPBackend.ConnectionState, username, password string) (goSMTPBackend.Session, error) {
-	if sb.bridge.HasError(bridge.ErrLocalCacheUnavailable) {
-		return nil, users.ErrLoggedOutUser
-	}
-
 	username = strings.ToLower(username)
 
-	user, err := sb.bridge.GetUser(username)
+	user, err := sb.users.GetUser(username)
 	if err != nil {
 		log.Warn("Cannot get user: ", err)
 		return nil, err

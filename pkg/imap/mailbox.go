@@ -24,6 +24,7 @@ import (
 	"github.com/emersion/go-imap"
 	"github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/store"
 	"github.com/sirupsen/logrus"
 )
 
@@ -33,13 +34,13 @@ type imapMailbox struct {
 
 	log *logrus.Entry
 
-	storeUser    storeUserProvider
-	storeAddress storeAddressProvider
-	storeMailbox storeMailboxProvider
+	storeUser    *store.Store
+	storeAddress *store.Address
+	storeMailbox *store.Mailbox
 }
 
 // newIMAPMailbox returns struct implementing go-imap/mailbox interface.
-func newIMAPMailbox(user *imapUser, storeMailbox storeMailboxProvider) *imapMailbox {
+func newIMAPMailbox(user *imapUser, storeMailbox *store.Mailbox) *imapMailbox {
 	return &imapMailbox{
 		user: user,
 		name: storeMailbox.Name(),

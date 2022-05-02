@@ -25,6 +25,8 @@ import (
 	imapquota "github.com/emersion/go-imap-quota"
 	goIMAPBackend "github.com/emersion/go-imap/backend"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/store"
+	"github.com/ljanyst/peroxide/pkg/users"
 )
 
 var (
@@ -33,10 +35,10 @@ var (
 
 type imapUser struct {
 	backend *imapBackend
-	user    bridgeUser
+	user    *users.User
 
-	storeUser    storeUserProvider
-	storeAddress storeAddressProvider
+	storeUser    *store.Store
+	storeAddress *store.Address
 
 	currentAddressLowercase string
 
@@ -61,7 +63,7 @@ type imapUser struct {
 // newIMAPUser returns struct implementing go-imap/user interface.
 func newIMAPUser(
 	backend *imapBackend,
-	user bridgeUser,
+	user *users.User,
 	addressID, address string,
 ) (*imapUser, error) {
 	log.WithField("address", addressID).Debug("Creating new IMAP user")

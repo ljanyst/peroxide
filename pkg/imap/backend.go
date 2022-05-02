@@ -38,7 +38,7 @@ import (
 
 	"github.com/emersion/go-imap"
 	goIMAPBackend "github.com/emersion/go-imap/backend"
-	"github.com/ljanyst/peroxide/pkg/bridge"
+	cacheCfg "github.com/ljanyst/peroxide/pkg/config/cache"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
 	"github.com/ljanyst/peroxide/pkg/events"
 	"github.com/ljanyst/peroxide/pkg/listener"
@@ -46,7 +46,7 @@ import (
 )
 
 type imapBackend struct {
-	bridge        bridger
+	usersMgr      *users.Users
 	updates       *imapUpdates
 	eventListener listener.Listener
 	listWorkers   int
@@ -66,14 +66,13 @@ type settingsProvider interface {
 // NewIMAPBackend returns struct implementing go-imap/backend interface.
 func NewIMAPBackend(
 	eventListener listener.Listener,
-	cache cacheProvider,
+	cache *cacheCfg.Cache,
 	setting settingsProvider,
-	bridge *bridge.Bridge,
+	users *users.Users,
 ) *imapBackend { //nolint[golint]
-	bridgeWrap := newBridgeWrap(bridge)
 
 	imapWorkers := setting.GetInt(settings.IMAPWorkers)
-	backend := newIMAPBackend(cache, bridgeWrap, eventListener, imapWorkers)
+	backend := newIMAPBackend(cache, users, eventListener, imapWorkers)
 
 	go backend.monitorDisconnectedUsers()
 
@@ -81,13 +80,13 @@ func NewIMAPBackend(
 }
 
 func newIMAPBackend(
-	cache cacheProvider,
-	bridge bridger,
+	cache *cacheCfg.Cache,
+	users *users.Users,
 	eventListener listener.Listener,
 	listWorkers int,
 ) *imapBackend {
 	return &imapBackend{
-		bridge:        bridge,
+		usersMgr:      users,
 		updates:       newIMAPUpdates(),
 		eventListener: eventListener,
 
@@ -116,7 +115,7 @@ func (ib *imapBackend) getUser(address string) (*imapUser, error) {
 func (ib *imapBackend) createUser(address string) (*imapUser, error) {
 	log.WithField("address", address).Debug("Creating new IMAP user")
 
-	user, err := ib.bridge.GetUser(address)
+	user, err := ib.usersMgr.GetUser(address)
 	if err != nil {
 		return nil, err
 	}
@@ -158,10 +157,6 @@ func (ib *imapBackend) deleteUser(address string) {
 
 // Login authenticates a user.
 func (ib *imapBackend) Login(_ *imap.ConnInfo, username, password string) (goIMAPBackend.User, error) {
-	if ib.bridge.HasError(bridge.ErrLocalCacheUnavailable) {
-		return nil, users.ErrLoggedOutUser
-	}
-
 	imapUser, err := ib.getUser(username)
 	if err != nil {
 		log.WithError(err).Warn("Cannot get user")

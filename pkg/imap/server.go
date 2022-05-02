@@ -34,7 +34,6 @@ import (
 	"github.com/emersion/go-imap/backend"
 	imapserver "github.com/emersion/go-imap/server"
 	"github.com/emersion/go-sasl"
-	"github.com/ljanyst/peroxide/pkg/bridge"
 	"github.com/ljanyst/peroxide/pkg/config/useragent"
 	"github.com/ljanyst/peroxide/pkg/imap/id"
 	"github.com/ljanyst/peroxide/pkg/imap/idle"
@@ -126,7 +125,7 @@ func (s *Server) Close() { s.controller.Close() }
 
 func (Server) Protocol() serverutil.Protocol { return serverutil.IMAP }
 func (s *Server) UseSSL() bool               { return false }
-func (s *Server) Address() string            { return fmt.Sprintf("%s:%d", bridge.Host, s.port) }
+func (s *Server) Address() string            { return fmt.Sprintf("%s:%d", "127.0.0.1", s.port) }
 func (s *Server) TLSConfig() *tls.Config     { return s.server.TLSConfig }
 
 func (s *Server) DebugServer() bool { return s.debugServer }

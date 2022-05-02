@@ -21,14 +21,9 @@ package bridge
 import (
 	"crypto/tls"
 
-	"github.com/ljanyst/peroxide/pkg/app/base"
-	pkgBridge "github.com/ljanyst/peroxide/pkg/bridge"
+	cfgCache "github.com/ljanyst/peroxide/pkg/config/cache"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
 	pkgTLS "github.com/ljanyst/peroxide/pkg/config/tls"
-	"github.com/ljanyst/peroxide/pkg/frontend"
-	"github.com/ljanyst/peroxide/pkg/imap"
-	"github.com/ljanyst/peroxide/pkg/message"
-	"github.com/ljanyst/peroxide/pkg/smtp"
 	"github.com/ljanyst/peroxide/pkg/store"
 	"github.com/ljanyst/peroxide/pkg/store/cache"
 	"github.com/pkg/errors"
@@ -41,98 +36,38 @@ const (
 	inMemoryCacheLimnit = 100 * (1 << 20)
 )
 
-func MailLoop(b *base.Base) error { // nolint[funlen]
-	tlsConfig, err := loadTLSConfig(b)
-	if err != nil {
-		return err
-	}
-
-	// GODT-1481: Always turn off reporting of unencrypted recipient in v2.
-	b.Settings.SetBool(settings.ReportOutgoingNoEncKey, false)
-
-	cache, cacheErr := loadMessageCache(b)
-	if cacheErr != nil {
-		logrus.WithError(cacheErr).Error("Could not load local cache.")
-	}
-
-	builder := message.NewBuilder(
-		b.Settings.GetInt(settings.FetchWorkers),
-		b.Settings.GetInt(settings.AttachmentWorkers),
-	)
-
-	bridge := pkgBridge.New(
-		b.Cache,
-		b.Settings,
-		b.Listener,
-		cache,
-		builder,
-		b.CM,
-		b.Creds,
-	)
-	imapBackend := imap.NewIMAPBackend(b.Listener, b.Cache, b.Settings, bridge)
-	smtpBackend := smtp.NewSMTPBackend(b.Listener, b.Settings, bridge)
-
-	if cacheErr != nil {
-		bridge.AddError(pkgBridge.ErrLocalCacheUnavailable)
-	}
-
-	go func() {
-		imapPort := b.Settings.GetInt(settings.IMAPPortKey)
-		imap.NewIMAPServer(
-			false, // log client
-			false, // log server
-			imapPort, tlsConfig, imapBackend, b.UserAgent, b.Listener).ListenAndServe()
-	}()
-
-	go func() {
-		smtpPort := b.Settings.GetInt(settings.SMTPPortKey)
-		useSSL := b.Settings.GetBool(settings.SMTPSSLKey)
-		smtp.NewSMTPServer(
-			false,
-			smtpPort, useSSL, tlsConfig, smtpBackend, b.Listener).ListenAndServe()
-	}()
-
-	f := frontend.New(
-		b.Settings,
-		b.Listener,
-		bridge,
-	)
-
-	return f.Loop()
-}
-
-func loadTLSConfig(b *base.Base) (*tls.Config, error) {
-	if !b.TLS.HasCerts() {
-		if err := generateTLSCerts(b); err != nil {
+func loadTLSConfig(cfg *pkgTLS.TLS) (*tls.Config, error) {
+	if !cfg.HasCerts() {
+		if err := generateTLSCerts(cfg); err != nil {
 			return nil, err
 		}
 	}
 
-	tlsConfig, err := b.TLS.GetConfig()
+	tlsConfig, err := cfg.GetConfig()
 	if err == nil {
 		return tlsConfig, nil
 	}
 
 	logrus.WithError(err).Error("Failed to load TLS config, regenerating certificates")
 
-	if err := generateTLSCerts(b); err != nil {
+	if err := generateTLSCerts(cfg); err != nil {
 		return nil, err
 	}
 
-	return b.TLS.GetConfig()
+	return cfg.GetConfig()
 }
 
-func generateTLSCerts(b *base.Base) error {
+func generateTLSCerts(cfg *pkgTLS.TLS) error {
 	template, err := pkgTLS.NewTLSTemplate()
 	if err != nil {
 		return errors.Wrap(err, "failed to generate TLS template")
 	}
 
-	if err := b.TLS.GenerateCerts(template); err != nil {
+	if err := cfg.GenerateCerts(template); err != nil {
 		return errors.Wrap(err, "failed to generate TLS certs")
 	}
 
-	if err := b.TLS.InstallCerts(); err != nil {
+	if err := cfg.InstallCerts(); err != nil {
 		return errors.Wrap(err, "failed to install TLS certs")
 	}
 
@@ -142,8 +77,8 @@ func generateTLSCerts(b *base.Base) error {
 // loadMessageCache loads local cache in case it is enabled in settings and available.
 // In any other case it is returning in-memory cache. Could also return an error in case
 // local cache is enabled but unavailable (in-memory cache will be returned nevertheless).
-func loadMessageCache(b *base.Base) (cache.Cache, error) {
-	if !b.Settings.GetBool(settings.CacheEnabledKey) {
+func LoadMessageCache(s *settings.Settings, cfg *cfgCache.Cache) (cache.Cache, error) {
+	if !s.GetBool(settings.CacheEnabledKey) {
 		return cache.NewInMemoryCache(inMemoryCacheLimnit), nil
 	}
 
@@ -152,7 +87,7 @@ func loadMessageCache(b *base.Base) (cache.Cache, error) {
 	// NOTE(GODT-1158): Changing compression is not an option currently
 	// available for user but, if user changes compression setting we have
 	// to nuke the cache.
-	if b.Settings.GetBool(settings.CacheCompressionKey) {
+	if s.GetBool(settings.CacheCompressionKey) {
 		compressor = &cache.GZipCompressor{}
 	} else {
 		compressor = &cache.NoopCompressor{}
@@ -160,24 +95,24 @@ func loadMessageCache(b *base.Base) (cache.Cache, error) {
 
 	var path string
 
-	if customPath := b.Settings.Get(settings.CacheLocationKey); customPath != "" {
+	if customPath := s.Get(settings.CacheLocationKey); customPath != "" {
 		path = customPath
 	} else {
-		path = b.Cache.GetDefaultMessageCacheDir()
+		path = cfg.GetDefaultMessageCacheDir()
 		// Store path so it will allways persist if default location
 		// will be changed in new version.
-		b.Settings.Set(settings.CacheLocationKey, path)
+		s.Set(settings.CacheLocationKey, path)
 	}
 
 	// To prevent memory peaks we set maximal write concurency for store
 	// build jobs.
-	store.SetBuildAndCacheJobLimit(b.Settings.GetInt(settings.CacheConcurrencyWrite))
+	store.SetBuildAndCacheJobLimit(s.GetInt(settings.CacheConcurrencyWrite))
 
 	messageCache, err := cache.NewOnDiskCache(path, compressor, cache.Options{
-		MinFreeAbs:      uint64(b.Settings.GetInt(settings.CacheMinFreeAbsKey)),
-		MinFreeRat:      b.Settings.GetFloat64(settings.CacheMinFreeRatKey),
-		ConcurrentRead:  b.Settings.GetInt(settings.CacheConcurrencyRead),
-		ConcurrentWrite: b.Settings.GetInt(settings.CacheConcurrencyWrite),
+		MinFreeAbs:      uint64(s.GetInt(settings.CacheMinFreeAbsKey)),
+		MinFreeRat:      s.GetFloat64(settings.CacheMinFreeRatKey),
+		ConcurrentRead:  s.GetInt(settings.CacheConcurrencyRead),
+		ConcurrentWrite: s.GetInt(settings.CacheConcurrencyWrite),
 	})
 
 	if err != nil {

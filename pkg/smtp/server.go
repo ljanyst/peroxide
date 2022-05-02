@@ -25,7 +25,6 @@ import (
 
 	"github.com/emersion/go-sasl"
 	goSMTP "github.com/emersion/go-smtp"
-	"github.com/ljanyst/peroxide/pkg/bridge"
 	"github.com/ljanyst/peroxide/pkg/listener"
 	"github.com/ljanyst/peroxide/pkg/serverutil"
 )
@@ -66,7 +65,7 @@ func newGoSMTPServer(s *Server) *goSMTP.Server {
 	newSMTP := goSMTP.NewServer(s.backend)
 	newSMTP.Addr = s.Address()
 	newSMTP.TLSConfig = s.tls
-	newSMTP.Domain = bridge.Host
+	newSMTP.Domain = "127.0.0.1"
 	newSMTP.ErrorLog = serverutil.NewServerErrorLogger(serverutil.SMTP)
 	newSMTP.AllowInsecureAuth = true
 	newSMTP.MaxLineLength = 1 << 16
@@ -95,7 +94,7 @@ func (s *Server) Close() { s.controller.Close() }
 
 func (Server) Protocol() serverutil.Protocol { return serverutil.SMTP }
 func (s *Server) UseSSL() bool               { return s.useSSL }
-func (s *Server) Address() string            { return fmt.Sprintf("%s:%d", bridge.Host, s.port) }
+func (s *Server) Address() string            { return fmt.Sprintf("%s:%d", "127.0.0.1", s.port) }
 func (s *Server) TLSConfig() *tls.Config     { return s.tls }
 
 func (s *Server) DebugServer() bool { return s.debug }

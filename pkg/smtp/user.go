@@ -37,6 +37,7 @@ import (
 	pkgMsg "github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/message/parser"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/users"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -44,7 +45,7 @@ import (
 type smtpUser struct {
 	eventListener listener.Listener
 	backend       *smtpBackend
-	user          bridgeUser
+	user          *users.User
 	storeUser     storeUserProvider
 	username      string
 	addressID     string
@@ -57,7 +58,7 @@ type smtpUser struct {
 func newSMTPUser(
 	eventListener listener.Listener,
 	smtpBackend *smtpBackend,
-	user bridgeUser,
+	user *users.User,
 	username string,
 	addressID string,
 ) (goSMTPBackend.Session, error) {
