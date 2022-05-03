@@ -86,15 +86,6 @@ func TestKeyValueStoreSetDefault(t *testing.T) {
 	r.Equal("value", pref.Get("key"))
 }
 
-func TestKeyValueStoreSet(t *testing.T) {
-	r := require.New(t)
-	pref, clean := newTestEmptyKeyValueStore(r)
-	defer clean()
-
-	pref.set("str", "value")
-	checkSavedKeyValueStore(r, pref.path, "{\n\t\"str\": \"value\"\n}")
-}
-
 func newTmpFile(r *require.Assertions) (path string, clean func()) {
 	tmpfile, err := ioutil.TempFile("", "pref.*.json")
 	r.NoError(err)

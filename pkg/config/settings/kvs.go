@@ -19,8 +19,6 @@ package settings
 
 import (
 	"encoding/json"
-	"errors"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"sync"
@@ -63,22 +61,6 @@ func (p *keyValueStore) load() error {
 	defer f.Close() //nolint[errcheck]
 
 	return json.NewDecoder(f).Decode(&p.cache)
-}
-
-func (p *keyValueStore) save() error {
-	if p.cache == nil {
-		return errors.New("cannot save preferences: cache is nil")
-	}
-
-	p.lock.Lock()
-	defer p.lock.Unlock()
-
-	b, err := json.MarshalIndent(p.cache, "", "\t")
-	if err != nil {
-		return err
-	}
-
-	return ioutil.WriteFile(p.path, b, 0600)
 }
 
 func (p *keyValueStore) setDefault(key, value string) {
@@ -128,8 +110,4 @@ func (p *keyValueStore) set(key, value string) {
 	p.lock.Lock()
 	p.cache[key] = value
 	p.lock.Unlock()
-
-	if err := p.save(); err != nil {
-		logrus.WithError(err).Warn("Cannot save preferences")
-	}
 }
