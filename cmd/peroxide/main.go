@@ -20,8 +20,7 @@ package main
 import (
 	"flag"
 
-	"github.com/ljanyst/peroxide/pkg/app/base"
-	"github.com/ljanyst/peroxide/pkg/app/bridge"
+	"github.com/ljanyst/peroxide/pkg/bridge"
 	"github.com/ljanyst/peroxide/pkg/files"
 	"github.com/sirupsen/logrus"
 )
@@ -31,12 +30,14 @@ var config = flag.String("config", files.ExpandTilde("~/.config/protonmail/bridg
 func main() {
 	flag.Parse()
 
-	base, err := base.New(*config)
+	b := &bridge.Bridge{}
+
+	err := b.Configure(*config)
 	if err != nil {
-		logrus.WithError(err).Fatal("Failed to create app base")
+		logrus.WithError(err).Fatal("Failed to configure the bridge")
 	}
 
-	if bridge.MailLoop(base); err != nil {
+	if b.Run(); err != nil {
 		logrus.WithError(err).Fatal("Bridge exited with error")
 	}
 }
