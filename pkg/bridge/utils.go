@@ -20,14 +20,14 @@ package bridge
 
 import (
 	"crypto/tls"
+	"crypto/x509"
+	"time"
 
 	cfgCache "github.com/ljanyst/peroxide/pkg/config/cache"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
-	pkgTLS "github.com/ljanyst/peroxide/pkg/config/tls"
 	"github.com/ljanyst/peroxide/pkg/store"
 	"github.com/ljanyst/peroxide/pkg/store/cache"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -36,42 +36,32 @@ const (
 	inMemoryCacheLimnit = 100 * (1 << 20)
 )
 
-func loadTLSConfig(cfg *pkgTLS.TLS) (*tls.Config, error) {
-	if !cfg.HasCerts() {
-		if err := generateTLSCerts(cfg); err != nil {
-			return nil, err
-		}
-	}
-
-	tlsConfig, err := cfg.GetConfig()
-	if err == nil {
-		return tlsConfig, nil
-	}
-
-	logrus.WithError(err).Error("Failed to load TLS config, regenerating certificates")
-
-	if err := generateTLSCerts(cfg); err != nil {
-		return nil, err
-	}
-
-	return cfg.GetConfig()
-}
-
-func generateTLSCerts(cfg *pkgTLS.TLS) error {
-	template, err := pkgTLS.NewTLSTemplate()
+// GetConfig tries to load TLS config or generate new one which is then returned.
+func loadTlsConfig(certPath, keyPath string) (*tls.Config, error) {
+	c, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
-		return errors.Wrap(err, "failed to generate TLS template")
+		return nil, errors.Wrap(err, "Failed to load cert and key")
 	}
 
-	if err := cfg.GenerateCerts(template); err != nil {
-		return errors.Wrap(err, "failed to generate TLS certs")
+	c.Leaf, err = x509.ParseCertificate(c.Certificate[0])
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to parse the certificate")
 	}
 
-	if err := cfg.InstallCerts(); err != nil {
-		return errors.Wrap(err, "failed to install TLS certs")
+	if time.Now().Add(31 * 24 * time.Hour).After(c.Leaf.NotAfter) {
+		return nil, errors.Wrap(err, "The X509 certificate is about to expire")
 	}
 
-	return nil
+	caCertPool := x509.NewCertPool()
+	caCertPool.AddCert(c.Leaf)
+
+	return &tls.Config{
+		Certificates: []tls.Certificate{c},
+		ServerName:   c.Leaf.Subject.CommonName,
+		ClientAuth:   tls.VerifyClientCertIfGiven,
+		RootCAs:      caCertPool,
+		ClientCAs:    caCertPool,
+	}, nil
 }
 
 // loadMessageCache loads local cache in case it is enabled in settings and available.

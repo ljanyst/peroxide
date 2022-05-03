@@ -28,7 +28,6 @@ import (
 
 	cacheCfg "github.com/ljanyst/peroxide/pkg/config/cache"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
-	"github.com/ljanyst/peroxide/pkg/config/tls"
 	"github.com/ljanyst/peroxide/pkg/cookies"
 	"github.com/ljanyst/peroxide/pkg/events"
 	"github.com/ljanyst/peroxide/pkg/imap"
@@ -52,7 +51,7 @@ var ErrLocalCacheUnavailable = errors.New("local cache is unavailable")
 type Bridge struct {
 	Users *users.Users
 
-	settings      SettingsProvider
+	settings      *settings.Settings
 	clientManager pmapi.Manager
 	cacheProvider *cacheCfg.Cache
 	cache         cache.Cache
@@ -133,9 +132,10 @@ func (b *Bridge) Configure(configFile string) error {
 }
 
 func (b *Bridge) Run() error {
-	tlsCfg := tls.New(b.settings.Get(settings.TLSDir))
-
-	tlsConfig, err := loadTLSConfig(tlsCfg)
+	tlsConfig, err := loadTlsConfig(
+		b.settings.Get(settings.X509Cert),
+		b.settings.Get(settings.X509Key),
+	)
 	if err != nil {
 		return err
 	}

@@ -38,7 +38,8 @@ const (
 	FetchWorkers          = "FetchWorkers"
 	AttachmentWorkers     = "AttachmentWorkers"
 	CacheDir              = "CacheDir"
-	TLSDir                = "TlsDir"
+	X509Key               = "X509Key"
+	X509Cert              = "X509Cert"
 	CookieJar             = "CookieJar"
 )
 
@@ -81,6 +82,7 @@ func (s *Settings) setDefaultValues() {
 	s.setDefault(SMTPPortKey, DefaultSMTPPort)
 
 	s.setDefault(CacheDir, filepath.Join(s.settingsDir, "cache"))
-	s.setDefault(TLSDir, s.settingsDir)
+	s.setDefault(X509Key, filepath.Join(s.settingsDir, "key.pem"))
+	s.setDefault(X509Cert, filepath.Join(s.settingsDir, "cert.pem"))
 	s.setDefault(CookieJar, filepath.Join(s.settingsDir, "cookies.json"))
 }
