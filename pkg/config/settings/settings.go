@@ -30,7 +30,6 @@ const (
 	AllowProxyKey         = "AllowProxy"
 	CacheEnabledKey       = "CacheEnabled"
 	CacheCompressionKey   = "CacheCompression"
-	CacheLocationKey      = "CacheLocation"
 	CacheMinFreeAbsKey    = "CacheMinFreeAbs"
 	CacheMinFreeRatKey    = "CacheMinFreeRat"
 	CacheConcurrencyRead  = "CacheConcurrentRead"
@@ -70,7 +69,6 @@ func (s *Settings) setDefaultValues() {
 	s.setDefault(AllowProxyKey, "false")
 	s.setDefault(CacheEnabledKey, "true")
 	s.setDefault(CacheCompressionKey, "true")
-	s.setDefault(CacheLocationKey, "")
 	s.setDefault(CacheMinFreeAbsKey, "250000000")
 	s.setDefault(CacheMinFreeRatKey, "")
 	s.setDefault(CacheConcurrencyRead, "16")
