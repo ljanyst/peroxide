@@ -27,6 +27,11 @@ import (
 )
 
 var genKey = flag.Bool("gen-key", false, "generate a random key for the encryption of credentials")
+var genX509 = flag.Bool("gen-x509", false, "generate a self-signed X509 certificate")
+var x509Org = flag.String("x509-org", "", "organization name to be used in X509 certificate")
+var x509Cn = flag.String("x509-cn", "", "common name to be used in X509 certificate")
+var x509KeyFile = flag.String("x509-key", "key.pem", "output file for the RSA key")
+var x509CertFile = flag.String("x509-cert", "cert.pem", "output file for the X509 certificate")
 
 func main() {
 	flag.Parse()
@@ -35,11 +40,17 @@ func main() {
 	if *genKey {
 		var key [32]byte
 		if _, err := io.ReadFull(rand.Reader, key[:]); err != nil {
-			fmt.Fprintf(os.Stderr, "Can't read random bytes: %s:\n", err)
+			fmt.Fprintf(os.Stderr, "Can't read random bytes: %s\n", err)
 			os.Exit(1)
 		}
 		password := base64.StdEncoding.EncodeToString(key[:])
 		fmt.Println(password)
+		done = true
+	} else if *genX509 {
+		if err := generateX509(*x509Org, *x509Cn, *x509CertFile, *x509KeyFile); err != nil {
+			fmt.Fprintf(os.Stderr, "Can't generate an X509 certificate: %s\n", err)
+			os.Exit(1)
+		}
 		done = true
 	}
 
