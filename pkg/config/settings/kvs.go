@@ -18,11 +18,11 @@
 package settings
 
 import (
-	"encoding/json"
-	"os"
+	"io/ioutil"
 	"strconv"
 	"sync"
 
+	"github.com/ghodss/yaml"
 	"github.com/sirupsen/logrus"
 )
 
@@ -39,7 +39,7 @@ func newKeyValueStore(path string) *keyValueStore {
 		lock: &sync.RWMutex{},
 	}
 	if err := p.load(); err != nil {
-		logrus.WithError(err).Warn("Cannot load preferences file, creating new one")
+		logrus.WithError(err).Warn("Cannot load preferences file, using defaults")
 	}
 	return p
 }
@@ -54,13 +54,16 @@ func (p *keyValueStore) load() error {
 
 	p.cache = map[string]string{}
 
-	f, err := os.Open(p.path)
+	data, err := ioutil.ReadFile(p.path)
 	if err != nil {
 		return err
 	}
-	defer f.Close() //nolint[errcheck]
 
-	return json.NewDecoder(f).Decode(&p.cache)
+	if len(data) == 0 {
+		return nil
+	}
+
+	return yaml.Unmarshal(data, &p.cache)
 }
 
 func (p *keyValueStore) setDefault(key, value string) {
