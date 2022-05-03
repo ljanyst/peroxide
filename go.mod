@@ -13,16 +13,11 @@ require (
 require (
 	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/ProtonMail/go-crypto v0.0.0-20211221144345-a4f6767435ab
-	github.com/ProtonMail/go-imap-id v0.0.0-20190926060100-f94a56b9ecde
 	github.com/ProtonMail/go-rfc5322 v0.8.0
 	github.com/ProtonMail/go-srp v0.0.1
 	github.com/ProtonMail/go-vcard v0.0.0-20180326232728-33aaa0a0c8a5
 	github.com/ProtonMail/gopenpgp/v2 v2.4.1
 	github.com/PuerkitoBio/goquery v1.5.1
-	github.com/abiosoft/ishell v2.0.0+incompatible
-	github.com/abiosoft/readline v0.0.0-20180607040430-155bce2042db // indirect
-	github.com/chzyer/logex v1.1.10 // indirect
-	github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 // indirect
 	github.com/cucumber/godog v0.12.1
 	github.com/cucumber/messages-go/v16 v16.0.1
 	github.com/emersion/go-imap-appendlimit v0.0.0-20190308131241-25671c986a6a
@@ -33,8 +28,7 @@ require (
 	github.com/emersion/go-smtp v0.14.0
 	github.com/emersion/go-textwrapper v0.0.0-20200911093747-65d896831594
 	github.com/emersion/go-vcard v0.0.0-20190105225839-8856043f13c5 // indirect
-	github.com/fatih/color v1.9.0
-	github.com/flynn-archive/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
+	github.com/ghodss/yaml v1.0.0
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/golang/mock v1.4.4
 	github.com/google/go-cmp v0.5.5
