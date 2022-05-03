@@ -153,7 +153,7 @@ func (b *Bridge) Run() error {
 
 	go func() {
 		smtpPort := b.settings.GetInt(settings.SMTPPortKey)
-		useSSL := b.settings.GetBool(settings.SMTPSSLKey)
+		useSSL := false
 		smtp.NewSMTPServer(
 			false,
 			smtpPort, useSSL, tlsConfig, smtpBackend, b.listener).ListenAndServe()

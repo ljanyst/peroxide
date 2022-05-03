@@ -19,42 +19,28 @@
 package settings
 
 import (
-	"fmt"
-	"math/rand"
 	"path/filepath"
-	"time"
 )
 
 // Keys of preferences in JSON file.
 const (
-	FirstStartKey          = "first_time_start"
-	FirstStartGUIKey       = "first_time_start_gui"
-	LastHeartbeatKey       = "last_heartbeat"
-	APIPortKey             = "user_port_api"
-	IMAPPortKey            = "user_port_imap"
-	SMTPPortKey            = "user_port_smtp"
-	SMTPSSLKey             = "user_ssl_smtp"
-	AllowProxyKey          = "allow_proxy"
-	AutoUpdateKey          = "autoupdate"
-	CookiesKey             = "cookies"
-	ReportOutgoingNoEncKey = "report_outgoing_email_without_encryption"
-	LastVersionKey         = "last_used_version"
-	UpdateChannelKey       = "update_channel"
-	RolloutKey             = "rollout"
-	PreferredKeychainKey   = "preferred_keychain"
-	CacheEnabledKey        = "cache_enabled"
-	CacheCompressionKey    = "cache_compression"
-	CacheLocationKey       = "cache_location"
-	CacheMinFreeAbsKey     = "cache_min_free_abs"
-	CacheMinFreeRatKey     = "cache_min_free_rat"
-	CacheConcurrencyRead   = "cache_concurrent_read"
-	CacheConcurrencyWrite  = "cache_concurrent_write"
-	IMAPWorkers            = "imap_workers"
-	FetchWorkers           = "fetch_workers"
-	AttachmentWorkers      = "attachment_workers"
-	CacheDir               = "cache_dir"
-	TLSDir                 = "tls_dir"
-	CookieJar              = "cookie_jar"
+	APIPortKey            = "UserPortApi"
+	IMAPPortKey           = "UserPortImap"
+	SMTPPortKey           = "UserPortSmtp"
+	AllowProxyKey         = "AllowProxy"
+	CacheEnabledKey       = "CacheEnabled"
+	CacheCompressionKey   = "CacheCompression"
+	CacheLocationKey      = "CacheLocation"
+	CacheMinFreeAbsKey    = "CacheMinFreeAbs"
+	CacheMinFreeRatKey    = "CacheMinFreeRat"
+	CacheConcurrencyRead  = "CacheConcurrentRead"
+	CacheConcurrencyWrite = "CacheConcurrentWrite"
+	IMAPWorkers           = "ImapWorkers"
+	FetchWorkers          = "FetchWorkers"
+	AttachmentWorkers     = "AttachmentWorkers"
+	CacheDir              = "CacheDir"
+	TLSDir                = "TlsDir"
+	CookieJar             = "CookieJar"
 )
 
 type Settings struct {
@@ -81,16 +67,7 @@ const (
 )
 
 func (s *Settings) setDefaultValues() {
-	s.setDefault(FirstStartKey, "true")
-	s.setDefault(FirstStartGUIKey, "true")
-	s.setDefault(LastHeartbeatKey, fmt.Sprintf("%v", time.Now().YearDay()))
-	s.setDefault(AllowProxyKey, "true")
-	s.setDefault(AutoUpdateKey, "true")
-	s.setDefault(ReportOutgoingNoEncKey, "false")
-	s.setDefault(LastVersionKey, "")
-	s.setDefault(UpdateChannelKey, "")
-	s.setDefault(RolloutKey, fmt.Sprintf("%v", rand.Float64())) //nolint[gosec] G404 It is OK to use weak random number generator here
-	s.setDefault(PreferredKeychainKey, "")
+	s.setDefault(AllowProxyKey, "false")
 	s.setDefault(CacheEnabledKey, "true")
 	s.setDefault(CacheCompressionKey, "true")
 	s.setDefault(CacheLocationKey, "")
@@ -101,13 +78,9 @@ func (s *Settings) setDefaultValues() {
 	s.setDefault(IMAPWorkers, "16")
 	s.setDefault(FetchWorkers, "16")
 	s.setDefault(AttachmentWorkers, "16")
-
 	s.setDefault(APIPortKey, DefaultAPIPort)
 	s.setDefault(IMAPPortKey, DefaultIMAPPort)
 	s.setDefault(SMTPPortKey, DefaultSMTPPort)
-
-	// By default, stick to STARTTLS. If the user uses catalina+applemail they'll have to change to SSL.
-	s.setDefault(SMTPSSLKey, "false")
 
 	s.setDefault(CacheDir, filepath.Join(s.settingsDir, "cache"))
 	s.setDefault(TLSDir, s.settingsDir)
