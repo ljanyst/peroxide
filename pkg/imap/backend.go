@@ -32,13 +32,13 @@
 package imap
 
 import (
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/emersion/go-imap"
 	goIMAPBackend "github.com/emersion/go-imap/backend"
-	cacheCfg "github.com/ljanyst/peroxide/pkg/config/cache"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
 	"github.com/ljanyst/peroxide/pkg/events"
 	"github.com/ljanyst/peroxide/pkg/listener"
@@ -59,20 +59,16 @@ type imapBackend struct {
 	imapCacheLock *sync.RWMutex
 }
 
-type settingsProvider interface {
-	GetInt(string) int
-}
-
 // NewIMAPBackend returns struct implementing go-imap/backend interface.
 func NewIMAPBackend(
 	eventListener listener.Listener,
-	cache *cacheCfg.Cache,
-	setting settingsProvider,
+	setting *settings.Settings,
 	users *users.Users,
 ) *imapBackend { //nolint[golint]
 
 	imapWorkers := setting.GetInt(settings.IMAPWorkers)
-	backend := newIMAPBackend(cache, users, eventListener, imapWorkers)
+	cacheDir := setting.Get(settings.CacheDir)
+	backend := newIMAPBackend(cacheDir, users, eventListener, imapWorkers)
 
 	go backend.monitorDisconnectedUsers()
 
@@ -80,7 +76,7 @@ func NewIMAPBackend(
 }
 
 func newIMAPBackend(
-	cache *cacheCfg.Cache,
+	cacheDir string,
 	users *users.Users,
 	eventListener listener.Listener,
 	listWorkers int,
@@ -93,7 +89,7 @@ func newIMAPBackend(
 		users:       map[string]*imapUser{},
 		usersLocker: &sync.Mutex{},
 
-		imapCachePath: cache.GetIMAPCachePath(),
+		imapCachePath: filepath.Join(cacheDir, "imap_backend_cache.json"),
 		imapCacheLock: &sync.RWMutex{},
 		listWorkers:   listWorkers,
 	}

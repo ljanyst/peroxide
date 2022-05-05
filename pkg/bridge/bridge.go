@@ -26,7 +26,6 @@ import (
 	"syscall"
 	"time"
 
-	cacheCfg "github.com/ljanyst/peroxide/pkg/config/cache"
 	"github.com/ljanyst/peroxide/pkg/config/settings"
 	"github.com/ljanyst/peroxide/pkg/cookies"
 	"github.com/ljanyst/peroxide/pkg/events"
@@ -37,6 +36,7 @@ import (
 	"github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/ljanyst/peroxide/pkg/smtp"
+	"github.com/ljanyst/peroxide/pkg/store"
 	"github.com/ljanyst/peroxide/pkg/store/cache"
 	"github.com/ljanyst/peroxide/pkg/users"
 	"github.com/ljanyst/peroxide/pkg/users/credentials"
@@ -51,11 +51,8 @@ var ErrLocalCacheUnavailable = errors.New("local cache is unavailable")
 type Bridge struct {
 	Users *users.Users
 
-	settings      *settings.Settings
-	clientManager pmapi.Manager
-	cacheProvider *cacheCfg.Cache
-	cache         cache.Cache
-	listener      listener.Listener
+	settings *settings.Settings
+	listener listener.Listener
 }
 
 func (b *Bridge) Configure(configFile string) error {
@@ -67,11 +64,7 @@ func (b *Bridge) Configure(configFile string) error {
 
 	settingsObj := settings.New(configFile)
 
-	cacheConf, err := cacheCfg.New(settingsObj.Get(settings.CacheDir), "c11")
-	if err != nil {
-		return err
-	}
-	if err := cacheConf.RemoveOldVersions(); err != nil {
+	if err := store.ClearIncompatibleStore(settingsObj.Get(settings.CacheDir)); err != nil {
 		return err
 	}
 
@@ -101,9 +94,13 @@ func (b *Bridge) Configure(configFile string) error {
 
 	cm.SetCookieJar(jar)
 
-	cache, err := LoadMessageCache(settingsObj, cacheConf)
+	if settingsObj.GetBool(settings.AllowProxyKey) {
+		cm.AllowProxy()
+	}
+
+	cache, err := cache.LoadMessageCache(settingsObj)
 	if err != nil {
-		return err
+		log.WithError(err).Error("Cannot load persistent message cache")
 	}
 
 	builder := message.NewBuilder(
@@ -111,22 +108,15 @@ func (b *Bridge) Configure(configFile string) error {
 		settingsObj.GetInt(settings.AttachmentWorkers),
 	)
 
-	if settingsObj.GetBool(settings.AllowProxyKey) {
-		cm.AllowProxy()
-	}
-
 	u := users.New(
 		listener,
 		cm,
 		credentials.NewStore(kc),
-		NewStoreFactory(cacheConf, listener, cache, builder),
+		store.NewStoreFactory(settingsObj, listener, cache, builder),
 	)
 
 	b.Users = u
 	b.settings = settingsObj
-	b.clientManager = cm
-	b.cacheProvider = cacheConf
-	b.cache = cache
 	b.listener = listener
 	return nil
 }
@@ -140,7 +130,7 @@ func (b *Bridge) Run() error {
 		return err
 	}
 
-	imapBackend := imap.NewIMAPBackend(b.listener, b.cacheProvider, b.settings, b.Users)
+	imapBackend := imap.NewIMAPBackend(b.listener, b.settings, b.Users)
 	smtpBackend := smtp.NewSMTPBackend(b.listener, b.Users)
 
 	go func() {
