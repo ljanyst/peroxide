@@ -77,6 +77,10 @@ func (c *Events) loadEvents() error {
 	}
 
 	f, err := os.Open(c.path)
+	if os.IsNotExist(err) {
+		return nil
+	}
+
 	if err != nil {
 		return err
 	}
