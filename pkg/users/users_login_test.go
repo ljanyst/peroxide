@@ -20,10 +20,9 @@ package users
 import (
 	"testing"
 
-	"github.com/ljanyst/peroxide/pkg/events"
-	"github.com/ljanyst/peroxide/pkg/metrics"
-	"github.com/ljanyst/peroxide/pkg/pmapi"
 	gomock "github.com/golang/mock/gomock"
+	"github.com/ljanyst/peroxide/pkg/events"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/pkg/errors"
 	r "github.com/stretchr/testify/require"
 )
@@ -52,7 +51,6 @@ func TestUsersFinishLoginNewUser(t *testing.T) {
 	mockAddingConnectedUser(t, m)
 	mockEventLoopNoAction(m)
 
-	m.clientManager.EXPECT().SendSimpleMetric(gomock.Any(), string(metrics.Setup), string(metrics.NewUser), string(metrics.NoLabel))
 	m.eventListener.EXPECT().Emit(events.UserRefreshEvent, testCredentials.UserID)
 
 	checkUsersFinishLogin(t, m, testAuthRefresh, testCredentials.MailboxPassword, testCredentials.UserID, nil)

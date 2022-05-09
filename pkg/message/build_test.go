@@ -26,9 +26,9 @@ import (
 	"time"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
-	"github.com/ljanyst/peroxide/pkg/message/mocks"
-	tests "github.com/ljanyst/peroxide/test"
 	"github.com/golang/mock/gomock"
+	"github.com/ljanyst/peroxide/pkg/message/mocks"
+	"github.com/ljanyst/peroxide/pkg/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -40,7 +40,7 @@ func TestBuildPlainMessage(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/plain", "body", time.Now())
 
 	job, done := b.NewJob(context.Background(), newTestFetcher(m, kr, msg), msg.ID, ForegroundPriority)
@@ -62,7 +62,7 @@ func TestBuildPlainMessageWithLongKey(t *testing.T) {
 	b := NewBuilder(1, 1)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/plain", "body", time.Now())
 	msg.Header["ReallyVeryVeryVeryVeryVeryLongLongLongLongLongLongLongKeyThatWillHaveNotSoLongValue"] = []string{"value"}
 
@@ -86,7 +86,7 @@ func TestBuildHTMLMessage(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/html", "<html><body>body</body></html>", time.Now())
 
 	job, done := b.NewJob(context.Background(), newTestFetcher(m, kr, msg), msg.ID, ForegroundPriority)
@@ -110,7 +110,7 @@ func TestBuildPlainEncryptedMessage(t *testing.T) {
 
 	body := readerToString(getFileReader("pgp-mime-body-plaintext.eml"))
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "multipart/mixed", body, time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC))
 
 	job, done := b.NewJob(context.Background(), newTestFetcher(m, kr, msg), msg.ID, ForegroundPriority)
@@ -141,7 +141,7 @@ func TestBuildPlainEncryptedMessageMissingHeader(t *testing.T) {
 
 	body := readerToString(getFileReader("plaintext-missing-header.eml"))
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "multipart/mixed", body, time.Now())
 
 	job, done := b.NewJob(context.Background(), newTestFetcher(m, kr, msg), msg.ID, ForegroundPriority)
@@ -164,7 +164,7 @@ func TestBuildPlainEncryptedMessageInvalidHeader(t *testing.T) {
 
 	body := readerToString(getFileReader("plaintext-invalid-header.eml"))
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "multipart/mixed", body, time.Now())
 
 	job, done := b.NewJob(context.Background(), newTestFetcher(m, kr, msg), msg.ID, ForegroundPriority)
@@ -187,8 +187,8 @@ func TestBuildPlainSignedEncryptedMessageMissingHeader(t *testing.T) {
 
 	body := readerToString(getFileReader("plaintext-missing-header.eml"))
 
-	kr := tests.MakeKeyRing(t)
-	sig := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
+	sig := testutil.MakeKeyRing(t)
 
 	enc, err := kr.Encrypt(crypto.NewPlainMessageFromString(body), sig)
 	require.NoError(t, err)
@@ -230,8 +230,8 @@ func TestBuildPlainSignedEncryptedMessageInvalidHeader(t *testing.T) {
 
 	body := readerToString(getFileReader("plaintext-invalid-header.eml"))
 
-	kr := tests.MakeKeyRing(t)
-	sig := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
+	sig := testutil.MakeKeyRing(t)
 
 	enc, err := kr.Encrypt(crypto.NewPlainMessageFromString(body), sig)
 	require.NoError(t, err)
@@ -273,7 +273,7 @@ func TestBuildPlainEncryptedLatin2Message(t *testing.T) {
 
 	body := readerToString(getFileReader("pgp-mime-body-plaintext-latin2.eml"))
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "multipart/mixed", body, time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC))
 
 	job, done := b.NewJob(context.Background(), newTestFetcher(m, kr, msg), msg.ID, ForegroundPriority)
@@ -301,7 +301,7 @@ func TestBuildHTMLEncryptedMessage(t *testing.T) {
 
 	body := readerToString(getFileReader("pgp-mime-body-html.eml"))
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "multipart/mixed", body, time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC))
 
 	job, done := b.NewJob(context.Background(), newTestFetcher(m, kr, msg), msg.ID, ForegroundPriority)
@@ -333,8 +333,8 @@ func TestBuildPlainSignedMessage(t *testing.T) {
 
 	body := readerToString(getFileReader("text_plain.eml"))
 
-	kr := tests.MakeKeyRing(t)
-	sig := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
+	sig := testutil.MakeKeyRing(t)
 
 	enc, err := kr.Encrypt(crypto.NewPlainMessageFromString(body), sig)
 	require.NoError(t, err)
@@ -377,8 +377,8 @@ func TestBuildPlainSignedBase64Message(t *testing.T) {
 
 	body := readerToString(getFileReader("text_plain_base64.eml"))
 
-	kr := tests.MakeKeyRing(t)
-	sig := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
+	sig := testutil.MakeKeyRing(t)
 
 	enc, err := kr.Encrypt(crypto.NewPlainMessageFromString(body), sig)
 	require.NoError(t, err)
@@ -422,7 +422,7 @@ func TestBuildSignedPlainEncryptedMessage(t *testing.T) {
 
 	body := readerToString(getFileReader("pgp-mime-body-signed-plaintext.eml"))
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "multipart/mixed", body, time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC))
 
 	job, done := b.NewJob(context.Background(), newTestFetcher(m, kr, msg), msg.ID, ForegroundPriority)
@@ -465,7 +465,7 @@ func TestBuildSignedHTMLEncryptedMessage(t *testing.T) {
 
 	body := readerToString(getFileReader("pgp-mime-body-signed-html.eml"))
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "multipart/mixed", body, time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC))
 
 	job, done := b.NewJob(context.Background(), newTestFetcher(m, kr, msg), msg.ID, ForegroundPriority)
@@ -510,7 +510,7 @@ func TestBuildSignedPlainEncryptedMessageWithPubKey(t *testing.T) {
 
 	body := readerToString(getFileReader("pgp-mime-body-signed-plaintext-with-pubkey.eml"))
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "multipart/mixed", body, time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC))
 
 	job, done := b.NewJob(context.Background(), newTestFetcher(m, kr, msg), msg.ID, ForegroundPriority)
@@ -562,7 +562,7 @@ func TestBuildSignedHTMLEncryptedMessageWithPubKey(t *testing.T) {
 
 	body := readerToString(getFileReader("pgp-mime-body-signed-html-with-pubkey.eml"))
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "multipart/mixed", body, time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC))
 
 	job, done := b.NewJob(context.Background(), newTestFetcher(m, kr, msg), msg.ID, ForegroundPriority)
@@ -615,7 +615,7 @@ func TestBuildSignedMultipartAlternativeEncryptedMessageWithPubKey(t *testing.T)
 
 	body := readerToString(getFileReader("pgp-mime-body-signed-multipart-alternative-with-pubkey.eml"))
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "multipart/mixed", body, time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC))
 
 	job, done := b.NewJob(context.Background(), newTestFetcher(m, kr, msg), msg.ID, ForegroundPriority)
@@ -684,7 +684,7 @@ func TestBuildSignedEmbeddedMessageRFC822EncryptedMessageWithPubKey(t *testing.T
 
 	body := readerToString(getFileReader("pgp-mime-body-signed-embedded-message-rfc822-with-pubkey.eml"))
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "multipart/mixed", body, time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC))
 
 	job, done := b.NewJob(context.Background(), newTestFetcher(m, kr, msg), msg.ID, ForegroundPriority)
@@ -739,7 +739,7 @@ func TestBuildHTMLMessageWithAttachment(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/html", "<html><body>body</body></html>", time.Now())
 	att := addTestAttachment(t, kr, msg, "attachID", "file.png", "image/png", "attachment", "attachment")
 
@@ -769,7 +769,7 @@ func TestBuildHTMLMessageWithRFC822Attachment(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/html", "<html><body>body</body></html>", time.Now())
 	att := addTestAttachment(t, kr, msg, "attachID", "file.eml", "message/rfc822", "attachment", "... message/rfc822 ...")
 
@@ -799,7 +799,7 @@ func TestBuildHTMLMessageWithInlineAttachment(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/html", "<html><body>body</body></html>", time.Now())
 	inl := addTestAttachment(t, kr, msg, "inlineID", "file.png", "image/png", "inline", "inline")
 
@@ -832,7 +832,7 @@ func TestBuildHTMLMessageWithComplexAttachments(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/html", "<html><body>body</body></html>", time.Now())
 	inl0 := addTestAttachment(t, kr, msg, "inlineID0", "inline0.png", "image/png", "inline", "inline0")
 	inl1 := addTestAttachment(t, kr, msg, "inlineID1", "inline1.png", "image/png", "inline", "inline1")
@@ -889,7 +889,7 @@ func TestBuildAttachmentWithExoticFilename(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/html", "<html><body>body</body></html>", time.Now())
 	att := addTestAttachment(t, kr, msg, "attachID", `I řeally šhould leařn czech.png`, "image/png", "attachment", "attachment")
 
@@ -917,7 +917,7 @@ func TestBuildAttachmentWithLongFilename(t *testing.T) {
 
 	veryLongName := strings.Repeat("a", 200) + ".png"
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/html", "<html><body>body</body></html>", time.Now())
 	att := addTestAttachment(t, kr, msg, "attachID", veryLongName, "image/png", "attachment", "attachment")
 
@@ -943,7 +943,7 @@ func TestBuildMessageDate(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/plain", "body", time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC))
 
 	job, done := b.NewJob(context.Background(), newTestFetcher(m, kr, msg), msg.ID, ForegroundPriority)
@@ -962,7 +962,7 @@ func TestBuildMessageWithInvalidDate(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 
 	// Create a message with "invalid" (according to applemail) date (before unix time 0).
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/html", "<html><body>body</body></html>", time.Unix(-1, 0))
@@ -1001,7 +1001,7 @@ func TestBuildMessageInternalID(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/plain", "body", time.Now())
 
 	job, done := b.NewJob(context.Background(), newTestFetcher(m, kr, msg), msg.ID, ForegroundPriority)
@@ -1020,7 +1020,7 @@ func TestBuildMessageExternalID(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/plain", "body", time.Now())
 
 	// Set the message's external ID; this should be used preferentially to set the Message-Id header field.
@@ -1042,7 +1042,7 @@ func TestBuild8BitBody(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 
 	// Set an 8-bit body; the charset should be set to UTF-8.
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/plain", "I řeally šhould leařn czech", time.Now())
@@ -1063,7 +1063,7 @@ func TestBuild8BitSubject(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/plain", "body", time.Now())
 
 	// Set an 8-bit subject; it should be RFC2047-encoded.
@@ -1087,7 +1087,7 @@ func TestBuild8BitSender(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/plain", "body", time.Now())
 
 	// Set an 8-bit sender; it should be RFC2047-encoded.
@@ -1114,7 +1114,7 @@ func TestBuild8BitRecipients(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/plain", "body", time.Now())
 
 	// Set an 8-bit sender; it should be RFC2047-encoded.
@@ -1141,7 +1141,7 @@ func TestBuildIncludeMessageIDReference(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/plain", "body", time.Now())
 
 	// Add references.
@@ -1175,7 +1175,7 @@ func TestBuildMessageIsDeterministic(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/plain", "body", time.Now())
 	inl := addTestAttachment(t, kr, msg, "inlineID", "file.png", "image/png", "inline", "inline")
 	att := addTestAttachment(t, kr, msg, "attachID", "attach.png", "image/png", "attachment", "attachment")
@@ -1200,7 +1200,7 @@ func TestBuildParallel(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg1 := newTestMessage(t, kr, "messageID1", "addressID", "text/plain", "body1", time.Now())
 	msg2 := newTestMessage(t, kr, "messageID2", "addressID", "text/plain", "body2", time.Now())
 
@@ -1228,7 +1228,7 @@ func TestBuildParallelSameMessage(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/plain", "body", time.Now())
 
 	// Jobs for the same messageID are shared so fetcher is only called once.
@@ -1258,10 +1258,10 @@ func TestBuildUndecryptableMessage(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 
 	// Use a different keyring for encrypting the message; it won't be decryptable.
-	msg := newTestMessage(t, tests.MakeKeyRing(t), "messageID", "addressID", "text/plain", "body", time.Now())
+	msg := newTestMessage(t, testutil.MakeKeyRing(t), "messageID", "addressID", "text/plain", "body", time.Now())
 
 	job, done := b.NewJob(context.Background(), newTestFetcher(m, kr, msg), msg.ID, ForegroundPriority)
 	defer done()
@@ -1277,11 +1277,11 @@ func TestBuildUndecryptableAttachment(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/plain", "body", time.Now())
 
 	// Use a different keyring for encrypting the attachment; it won't be decryptable.
-	att := addTestAttachment(t, tests.MakeKeyRing(t), msg, "attachID", "file.png", "image/png", "attachment", "attachment")
+	att := addTestAttachment(t, testutil.MakeKeyRing(t), msg, "attachID", "file.png", "image/png", "attachment", "attachment")
 
 	job, done := b.NewJob(context.Background(), newTestFetcher(m, kr, msg, att), msg.ID, ForegroundPriority)
 	defer done()
@@ -1297,10 +1297,10 @@ func TestBuildCustomMessagePlain(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 
 	// Use a different keyring for encrypting the message; it won't be decryptable.
-	foreignKR := tests.MakeKeyRing(t)
+	foreignKR := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, foreignKR, "messageID", "addressID", "text/plain", "body", time.Now())
 
 	// Tell the job to ignore decryption errors; a custom message will be returned instead of an error.
@@ -1333,10 +1333,10 @@ func TestBuildCustomMessageHTML(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 
 	// Use a different keyring for encrypting the message; it won't be decryptable.
-	foreignKR := tests.MakeKeyRing(t)
+	foreignKR := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, foreignKR, "messageID", "addressID", "text/html", "<html><body>body</body></html>", time.Now())
 
 	// Tell the job to ignore decryption errors; a custom message will be returned instead of an error.
@@ -1369,12 +1369,12 @@ func TestBuildCustomMessageEncrypted(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 
 	body := readerToString(getFileReader("pgp-mime-body-plaintext.eml"))
 
 	// Use a different keyring for encrypting the message; it won't be decryptable.
-	foreignKR := tests.MakeKeyRing(t)
+	foreignKR := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, foreignKR, "messageID", "addressID", "multipart/mixed", body, time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC))
 
 	msg.Subject = "this is a subject to make sure we preserve subject"
@@ -1418,10 +1418,10 @@ func TestBuildCustomMessagePlainWithAttachment(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 
 	// Use a different keyring for encrypting the message; it won't be decryptable.
-	foreignKR := tests.MakeKeyRing(t)
+	foreignKR := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, foreignKR, "messageID", "addressID", "text/plain", "body", time.Now())
 	att := addTestAttachment(t, foreignKR, msg, "attachID", "file.png", "image/png", "attachment", "attachment")
 
@@ -1463,10 +1463,10 @@ func TestBuildCustomMessageHTMLWithAttachment(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 
 	// Use a different keyring for encrypting the message; it won't be decryptable.
-	foreignKR := tests.MakeKeyRing(t)
+	foreignKR := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, foreignKR, "messageID", "addressID", "text/html", "<html><body>body</body></html>", time.Now())
 	att := addTestAttachment(t, foreignKR, msg, "attachID", "file.png", "image/png", "attachment", "attachment")
 
@@ -1508,10 +1508,10 @@ func TestBuildCustomMessageOnlyBodyIsUndecryptable(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 
 	// Use a different keyring for encrypting the message; it won't be decryptable.
-	foreignKR := tests.MakeKeyRing(t)
+	foreignKR := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, foreignKR, "messageID", "addressID", "text/html", "<html><body>body</body></html>", time.Now())
 
 	// Use the original keyring for encrypting the attachment; it should decrypt fine.
@@ -1555,11 +1555,11 @@ func TestBuildCustomMessageOnlyAttachmentIsUndecryptable(t *testing.T) {
 	defer b.Done()
 
 	// Use the original keyring for encrypting the message; it should decrypt fine.
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/html", "<html><body>body</body></html>", time.Now())
 
 	// Use a different keyring for encrypting the attachment; it won't be decryptable.
-	foreignKR := tests.MakeKeyRing(t)
+	foreignKR := testutil.MakeKeyRing(t)
 	att := addTestAttachment(t, foreignKR, msg, "attachID", "file.png", "image/png", "attachment", "attachment")
 
 	// Tell the job to ignore decryption errors; a custom message will be returned instead of an error.
@@ -1599,7 +1599,7 @@ func TestBuildFetchMessageFail(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/plain", "body", time.Now())
 
 	// Pretend the message cannot be fetched.
@@ -1622,7 +1622,7 @@ func TestBuildFetchAttachmentFail(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/plain", "body", time.Now())
 	_ = addTestAttachment(t, kr, msg, "attachID", "file.png", "image/png", "attachment", "attachment")
 
@@ -1647,7 +1647,7 @@ func TestBuildNoSuchKeyRing(t *testing.T) {
 	b := NewBuilder(2, 2)
 	defer b.Done()
 
-	kr := tests.MakeKeyRing(t)
+	kr := testutil.MakeKeyRing(t)
 	msg := newTestMessage(t, kr, "messageID", "addressID", "text/plain", "body", time.Now())
 
 	// Pretend there is no available keyring.

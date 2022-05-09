@@ -34,7 +34,7 @@ import (
 	pmapimocks "github.com/ljanyst/peroxide/pkg/pmapi/mocks"
 	"github.com/ljanyst/peroxide/pkg/store/cache"
 	storemocks "github.com/ljanyst/peroxide/pkg/store/mocks"
-	tests "github.com/ljanyst/peroxide/test"
+	"github.com/ljanyst/peroxide/pkg/testutil"
 
 	"github.com/stretchr/testify/require"
 )
@@ -182,7 +182,7 @@ func (mocks *mocksForStore) newStoreNoEvents(t *testing.T, combinedMode bool, ms
 
 	mocks.user.EXPECT().GetClient().AnyTimes().Return(mocks.client)
 
-	testUserKeyring := tests.MakeKeyRing(t)
+	testUserKeyring := testutil.MakeKeyRing(t)
 	mocks.client.EXPECT().GetUserKeyRing().Return(testUserKeyring, nil).AnyTimes()
 	mocks.client.EXPECT().Addresses().Return(pmapi.AddressList{
 		{ID: addrID1, Email: addr1, Type: pmapi.OriginalAddress, Receive: true},

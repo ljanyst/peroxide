@@ -36,7 +36,6 @@ func TestTLSReporter_DoubleReport(t *testing.T) {
 
 	cfg := Config{
 		AppVersion: "3",
-		UserAgent:  "useragent",
 	}
 	r := newTLSReporter(cfg, TrustedAPIPins)
 

@@ -33,9 +33,9 @@ import (
 	pmapimocks "github.com/ljanyst/peroxide/pkg/pmapi/mocks"
 	"github.com/ljanyst/peroxide/pkg/store"
 	"github.com/ljanyst/peroxide/pkg/store/cache"
+	"github.com/ljanyst/peroxide/pkg/testutil"
 	"github.com/ljanyst/peroxide/pkg/users/credentials"
 	usersmocks "github.com/ljanyst/peroxide/pkg/users/mocks"
-	tests "github.com/ljanyst/peroxide/test"
 	"github.com/sirupsen/logrus"
 	r "github.com/stretchr/testify/require"
 )
@@ -299,7 +299,7 @@ func mockInitConnectedUser(t *testing.T, m mocks) {
 		m.pmapiClient.EXPECT().ListLabels(gomock.Any()).Return([]*pmapi.Label{}, nil),
 		m.pmapiClient.EXPECT().CountMessages(gomock.Any(), "").Return([]*pmapi.MessagesCount{}, nil),
 		m.pmapiClient.EXPECT().Addresses().Return([]*pmapi.Address{testPMAPIAddress}),
-		m.pmapiClient.EXPECT().GetUserKeyRing().Return(tests.MakeKeyRing(t), nil).AnyTimes(),
+		m.pmapiClient.EXPECT().GetUserKeyRing().Return(testutil.MakeKeyRing(t), nil).AnyTimes(),
 	)
 }
 
