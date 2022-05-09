@@ -27,6 +27,7 @@ import (
 
 	"github.com/ljanyst/peroxide/pkg/bridge"
 	"github.com/ljanyst/peroxide/pkg/files"
+	"github.com/ljanyst/peroxide/pkg/logging"
 	"github.com/sirupsen/logrus"
 )
 
@@ -41,6 +42,7 @@ var list = flag.Bool("list-accounts", false, "list user accounts")
 var delete = flag.Bool("delete-account", false, "delete user account")
 var add = flag.Bool("add-account", false, "add user account")
 var name = flag.String("name", "", "account name")
+var logLevel = flag.String("log-level", "Warning", "account name")
 
 func main() {
 	flag.Parse()
@@ -62,6 +64,8 @@ func main() {
 		}
 		done = true
 	} else {
+		logging.SetLevel(*logLevel)
+
 		b := &bridge.Bridge{}
 
 		err := b.Configure(*config)
