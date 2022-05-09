@@ -24,5 +24,7 @@ To than end, Perixide:
  * drops all the desktop desktop integration and trackers
  * provides a server program and a separate configuration program
 
+Example configuration file is provided as `config.example.yaml`.
+
 [1]: https://github.com/ProtonMail/proton-bridge
 [2]: https://github.com/emersion/hydroxide

@@ -1,0 +1,12 @@
+{
+#  "UserPortImap":     "1143",
+#  "UserPortSmtp":     "1025",
+#  "AllowProxy":       "false",
+#  "CacheEnabled":     "true",
+#  "CacheCompression": "true",
+#  "CacheDir":         "./run/cache",
+#  "X509Key":          "./run/key.pema",
+#  "X509Cert":         "./run/cert.pema",
+#  "CookieJar":        "./run/cookies.json",
+#  "ServerAddress":    "[::0]"
+}
