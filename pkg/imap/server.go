@@ -43,6 +43,7 @@ import (
 type Server struct {
 	debugClient bool
 	debugServer bool
+	address     string
 	port        int
 
 	server     *imapserver.Server
@@ -52,6 +53,7 @@ type Server struct {
 // NewIMAPServer constructs a new IMAP server configured with the given options.
 func NewIMAPServer(
 	debugClient, debugServer bool,
+	address string,
 	port int,
 	tls *tls.Config,
 	imapBackend backend.Backend,
@@ -60,6 +62,7 @@ func NewIMAPServer(
 	server := &Server{
 		debugClient: debugClient,
 		debugServer: debugServer,
+		address:     address,
 		port:        port,
 	}
 
@@ -112,7 +115,7 @@ func (s *Server) Close() { s.controller.Close() }
 
 func (Server) Protocol() serverutil.Protocol { return serverutil.IMAP }
 func (s *Server) UseSSL() bool               { return false }
-func (s *Server) Address() string            { return fmt.Sprintf("%s:%d", "127.0.0.1", s.port) }
+func (s *Server) Address() string            { return fmt.Sprintf("%s:%d", s.address, s.port) }
 func (s *Server) TLSConfig() *tls.Config     { return s.server.TLSConfig }
 
 func (s *Server) DebugServer() bool { return s.debugServer }

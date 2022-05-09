@@ -34,6 +34,7 @@ type Server struct {
 	backend goSMTP.Backend
 	debug   bool
 	useSSL  bool
+	address string
 	port    int
 	tls     *tls.Config
 
@@ -43,7 +44,10 @@ type Server struct {
 
 // NewSMTPServer returns an SMTP server configured with the given options.
 func NewSMTPServer(
-	debug bool, port int, useSSL bool,
+	debug bool,
+	address string,
+	port int,
+	useSSL bool,
 	tls *tls.Config,
 	smtpBackend goSMTP.Backend,
 	eventListener listener.Listener,
@@ -52,6 +56,7 @@ func NewSMTPServer(
 		backend: smtpBackend,
 		debug:   debug,
 		useSSL:  useSSL,
+		address: address,
 		port:    port,
 		tls:     tls,
 	}
@@ -94,7 +99,7 @@ func (s *Server) Close() { s.controller.Close() }
 
 func (Server) Protocol() serverutil.Protocol { return serverutil.SMTP }
 func (s *Server) UseSSL() bool               { return s.useSSL }
-func (s *Server) Address() string            { return fmt.Sprintf("%s:%d", "127.0.0.1", s.port) }
+func (s *Server) Address() string            { return fmt.Sprintf("%s:%d", s.address, s.port) }
 func (s *Server) TLSConfig() *tls.Config     { return s.tls }
 
 func (s *Server) DebugServer() bool { return s.debug }

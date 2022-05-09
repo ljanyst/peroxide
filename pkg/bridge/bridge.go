@@ -132,13 +132,15 @@ func (b *Bridge) Run() error {
 
 	imapBackend := imap.NewIMAPBackend(b.listener, b.settings, b.Users)
 	smtpBackend := smtp.NewSMTPBackend(b.listener, b.Users)
+	serverAddress := b.settings.Get(settings.ServerAddress)
 
 	go func() {
 		imapPort := b.settings.GetInt(settings.IMAPPortKey)
 		imap.NewIMAPServer(
 			false, // log client
 			false, // log server
-			imapPort, tlsConfig, imapBackend, b.listener).ListenAndServe()
+			serverAddress, imapPort, tlsConfig,
+			imapBackend, b.listener).ListenAndServe()
 	}()
 
 	go func() {
@@ -146,7 +148,8 @@ func (b *Bridge) Run() error {
 		useSSL := false
 		smtp.NewSMTPServer(
 			false,
-			smtpPort, useSSL, tlsConfig, smtpBackend, b.listener).ListenAndServe()
+			serverAddress, smtpPort, useSSL, tlsConfig,
+			smtpBackend, b.listener).ListenAndServe()
 	}()
 
 	done := make(chan os.Signal, 1)
