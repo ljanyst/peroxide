@@ -19,6 +19,7 @@ package main
 
 import (
 	"flag"
+	"os"
 
 	"github.com/ljanyst/peroxide/pkg/bridge"
 	"github.com/ljanyst/peroxide/pkg/files"
@@ -36,12 +37,13 @@ func main() {
 
 	b := &bridge.Bridge{}
 
-	err := b.Configure(*config)
-	if err != nil {
+	if err := b.Configure(*config); err != nil {
 		logrus.WithError(err).Fatal("Failed to configure the bridge")
+		os.Exit(1)
 	}
 
-	if b.Run(); err != nil {
+	if err := b.Run(); err != nil {
 		logrus.WithError(err).Fatal("Bridge exited with error")
+		os.Exit(1)
 	}
 }
