@@ -49,7 +49,7 @@ func askPass(prompt string) ([]byte, error) {
 }
 
 func listAccounts(b *bridge.Bridge) {
-	spacing := "%3d: %-20s %-20s %-15s %-15s "
+	spacing := "%3d: %-20s %-20s %-20s %-15s %-15s "
 	for idx, user := range b.Users.GetUsers() {
 		connected := "disconnected"
 		if user.IsConnected() {
@@ -61,7 +61,7 @@ func listAccounts(b *bridge.Bridge) {
 			mode = "combined"
 		}
 
-		fmt.Printf(spacing, idx, user.Username(), user.GetPrimaryAddress(), connected, mode)
+		fmt.Printf(spacing, idx, user.Username(), user.GetBridgePassword(), user.GetPrimaryAddress(), connected, mode)
 
 		for _, address := range user.GetAddresses() {
 			fmt.Printf("%-20s", address)
