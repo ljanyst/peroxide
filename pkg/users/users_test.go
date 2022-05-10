@@ -27,7 +27,6 @@ import (
 	"time"
 
 	gomock "github.com/golang/mock/gomock"
-	"github.com/ljanyst/peroxide/pkg/events"
 	"github.com/ljanyst/peroxide/pkg/message"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
 	pmapimocks "github.com/ljanyst/peroxide/pkg/pmapi/mocks"
@@ -232,9 +231,6 @@ func testNewUsersWithUsers(t *testing.T, m mocks) *Users {
 }
 
 func testNewUsers(t *testing.T, m mocks) *Users { //nolint[unparam]
-	m.eventListener.EXPECT().ProvideChannel(events.UpgradeApplicationEvent)
-	m.eventListener.EXPECT().ProvideChannel(events.InternetOnEvent)
-
 	users := New(m.eventListener, m.clientManager, m.credentialsStore, m.storeMaker)
 
 	waitForEvents()

@@ -32,9 +32,6 @@ func TestClearData(t *testing.T) {
 	users := testNewUsersWithUsers(t, m)
 	defer cleanUpUsersData(users)
 
-	m.eventListener.EXPECT().Emit(events.UserRefreshEvent, "user")
-	m.eventListener.EXPECT().Emit(events.UserRefreshEvent, "users")
-
 	m.eventListener.EXPECT().Emit(events.CloseConnectionEvent, "user@pm.me")
 	m.eventListener.EXPECT().Emit(events.CloseConnectionEvent, "users@pm.me")
 	m.eventListener.EXPECT().Emit(events.CloseConnectionEvent, "anotheruser@pm.me")

@@ -41,7 +41,6 @@ func TestUpdateUser(t *testing.T) {
 		m.pmapiClient.EXPECT().Addresses().Return([]*pmapi.Address{testPMAPIAddress}),
 
 		m.credentialsStore.EXPECT().UpdateEmails("user", []string{testPMAPIAddress.Email}).Return(testCredentials, nil),
-		m.eventListener.EXPECT().Emit(events.UserRefreshEvent, "user"),
 	)
 
 	r.NoError(t, user.UpdateUser(context.Background()))
@@ -69,7 +68,6 @@ func TestUserSwitchAddressMode(t *testing.T) {
 		m.pmapiClient.EXPECT().CountMessages(gomock.Any(), "").Return([]*pmapi.MessagesCount{}, nil),
 		m.pmapiClient.EXPECT().Addresses().Return([]*pmapi.Address{testPMAPIAddress}),
 		m.credentialsStore.EXPECT().SwitchAddressMode("user").Return(testCredentialsSplit, nil),
-		m.eventListener.EXPECT().Emit(events.UserRefreshEvent, "user"),
 	)
 
 	// Check switch to split mode.
@@ -87,7 +85,6 @@ func TestUserSwitchAddressMode(t *testing.T) {
 		m.pmapiClient.EXPECT().CountMessages(gomock.Any(), "").Return([]*pmapi.MessagesCount{}, nil),
 		m.pmapiClient.EXPECT().Addresses().Return([]*pmapi.Address{testPMAPIAddress}),
 		m.credentialsStore.EXPECT().SwitchAddressMode("user").Return(testCredentials, nil),
-		m.eventListener.EXPECT().Emit(events.UserRefreshEvent, "user"),
 	)
 
 	// Check switch to combined mode.
@@ -108,7 +105,6 @@ func TestLogoutUser(t *testing.T) {
 		m.pmapiClient.EXPECT().AuthDelete(gomock.Any()).Return(nil),
 		m.credentialsStore.EXPECT().Logout("user").Return(testCredentialsDisconnected, nil),
 		m.eventListener.EXPECT().Emit(events.CloseConnectionEvent, "user@pm.me"),
-		m.eventListener.EXPECT().Emit(events.UserRefreshEvent, "user"),
 	)
 
 	err := user.Logout()
@@ -127,7 +123,6 @@ func TestLogoutUserFailsLogout(t *testing.T) {
 		m.credentialsStore.EXPECT().Logout("user").Return(nil, errors.New("logout failed")),
 		m.credentialsStore.EXPECT().Delete("user").Return(nil),
 		m.eventListener.EXPECT().Emit(events.CloseConnectionEvent, "user@pm.me"),
-		m.eventListener.EXPECT().Emit(events.UserRefreshEvent, "user"),
 	)
 
 	err := user.Logout()
@@ -145,23 +140,6 @@ func TestCheckBridgeLogin(t *testing.T) {
 	r.NoError(t, err)
 }
 
-func TestCheckBridgeLoginUpgradeApplication(t *testing.T) {
-	m := initMocks(t)
-	defer m.ctrl.Finish()
-
-	user := testNewUser(t, m)
-	defer cleanUpUserData(user)
-
-	m.eventListener.EXPECT().Emit(events.UpgradeApplicationEvent, "")
-
-	isApplicationOutdated = true
-
-	err := user.CheckBridgeLogin("any-pass")
-	r.Equal(t, pmapi.ErrUpgradeApplication, err)
-
-	isApplicationOutdated = false
-}
-
 func TestCheckBridgeLoginLoggedOut(t *testing.T) {
 	m := initMocks(t)
 	defer m.ctrl.Finish()
@@ -172,9 +150,6 @@ func TestCheckBridgeLoginLoggedOut(t *testing.T) {
 		m.pmapiClient.EXPECT().AddAuthRefreshHandler(gomock.Any()),
 		m.pmapiClient.EXPECT().ListLabels(gomock.Any()).Return(nil, pmapi.ErrUnauthorized),
 		m.pmapiClient.EXPECT().Addresses().Return(nil),
-
-		// Mock CheckBridgeLogin.
-		m.eventListener.EXPECT().Emit(events.LogoutEvent, "user"),
 	)
 
 	user, _, err := newUser("user", m.eventListener, m.credentialsStore, m.storeMaker)

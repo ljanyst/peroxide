@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
-	"github.com/ljanyst/peroxide/pkg/events"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/pkg/errors"
 	r "github.com/stretchr/testify/require"
@@ -51,8 +50,6 @@ func TestUsersFinishLoginNewUser(t *testing.T) {
 	mockAddingConnectedUser(t, m)
 	mockEventLoopNoAction(m)
 
-	m.eventListener.EXPECT().Emit(events.UserRefreshEvent, testCredentials.UserID)
-
 	checkUsersFinishLogin(t, m, testAuthRefresh, testCredentials.MailboxPassword, testCredentials.UserID, nil)
 }
 
@@ -74,7 +71,6 @@ func TestUsersFinishLoginExistingDisconnectedUser(t *testing.T) {
 	)
 	mockInitConnectedUser(t, m)
 	mockEventLoopNoAction(m)
-	m.eventListener.EXPECT().Emit(events.UserRefreshEvent, testCredentialsDisconnected.UserID)
 
 	authRefresh := &pmapi.Auth{
 		UserID: testCredentialsDisconnected.UserID,

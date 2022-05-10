@@ -23,8 +23,8 @@ import (
 	"time"
 
 	"github.com/ljanyst/peroxide/pkg/events"
-	"github.com/ljanyst/peroxide/pkg/serverutil"
 	"github.com/ljanyst/peroxide/pkg/listener"
+	"github.com/ljanyst/peroxide/pkg/serverutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -38,9 +38,7 @@ func setup(t *testing.T) (*require.Assertions, *testServer, listener.Listener, s
 }
 
 func TestControllerListernServeClose(t *testing.T) {
-	r, s, l, c := setup(t)
-
-	errorCh := l.ProvideChannel(events.ErrorEvent)
+	r, s, _, c := setup(t)
 
 	r.True(s.portIsFree())
 	go c.ListenAndServe()
@@ -53,17 +51,10 @@ func TestControllerListernServeClose(t *testing.T) {
 
 	c.Close()
 	r.Eventually(s.portIsFree, time.Second, 50*time.Millisecond)
-
-	select {
-	case msg := <-errorCh:
-		r.Fail("Expected no error but have %q", msg)
-	case <-time.Tick(100 * time.Millisecond):
-		break
-	}
 }
 
 func TestControllerFailOnBusyPort(t *testing.T) {
-	r, s, l, c := setup(t)
+	r, s, _, c := setup(t)
 
 	ocupator := http.Server{Addr: s.Address()}
 	defer ocupator.Close() //nolint[errcheck]
@@ -71,17 +62,9 @@ func TestControllerFailOnBusyPort(t *testing.T) {
 	go ocupator.ListenAndServe() //nolint[errcheck]
 	r.Eventually(s.portIsOccupied, time.Second, 50*time.Millisecond)
 
-	errorCh := l.ProvideChannel(events.ErrorEvent)
 	go c.ListenAndServe()
 
 	r.Eventually(s.portIsOccupied, time.Second, 50*time.Millisecond)
-
-	select {
-	case <-errorCh:
-		break
-	case <-time.Tick(time.Second):
-		r.Fail("Expected error but have none.")
-	}
 }
 
 func TestControllerCallDisconnectUser(t *testing.T) {

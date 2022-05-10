@@ -21,8 +21,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/ljanyst/peroxide/pkg/events"
 	gomock "github.com/golang/mock/gomock"
+	"github.com/ljanyst/peroxide/pkg/events"
 	r "github.com/stretchr/testify/require"
 )
 
@@ -38,9 +38,7 @@ func TestDeleteUser(t *testing.T) {
 		m.credentialsStore.EXPECT().Logout("user").Return(testCredentialsDisconnected, nil),
 		m.credentialsStore.EXPECT().Delete("user").Return(nil),
 	)
-	m.eventListener.EXPECT().Emit(events.UserRefreshEvent, "user")
 	m.eventListener.EXPECT().Emit(events.CloseConnectionEvent, "user@pm.me")
-	m.eventListener.EXPECT().Emit(events.UserRefreshEvent, "user")
 
 	err := users.DeleteUser("user", true)
 	r.NoError(t, err)
@@ -63,9 +61,7 @@ func TestDeleteUserWithFailingLogout(t *testing.T) {
 		m.credentialsStore.EXPECT().Delete("user").Return(nil),
 	)
 
-	m.eventListener.EXPECT().Emit(events.UserRefreshEvent, "user")
 	m.eventListener.EXPECT().Emit(events.CloseConnectionEvent, "user@pm.me")
-	m.eventListener.EXPECT().Emit(events.UserRefreshEvent, "user")
 
 	err := users.DeleteUser("user", true)
 	r.NoError(t, err)
