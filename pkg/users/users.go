@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/ljanyst/peroxide/pkg/events"
 	"github.com/ljanyst/peroxide/pkg/listener"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/ljanyst/peroxide/pkg/users/credentials"
@@ -34,8 +33,7 @@ import (
 )
 
 var (
-	log                   = logrus.WithField("pkg", "users") //nolint[gochecknoglobals]
-	isApplicationOutdated = false                            //nolint[gochecknoglobals]
+	log = logrus.WithField("pkg", "users") //nolint[gochecknoglobals]
 
 	// ErrWrongMailboxPassword is returned when login password is OK but
 	// not the mailbox one.
@@ -78,10 +76,6 @@ func New(
 		lock:          sync.RWMutex{},
 	}
 
-	go func() {
-		u.watchEvents()
-	}()
-
 	if u.credStorer == nil {
 		log.Error("No credentials store is available")
 	} else if err := u.loadUsersFromCredentialsStore(); err != nil {
@@ -89,31 +83,6 @@ func New(
 	}
 
 	return u
-}
-
-func (u *Users) watchEvents() {
-	upgradeCh := u.events.ProvideChannel(events.UpgradeApplicationEvent)
-	internetOnCh := u.events.ProvideChannel(events.InternetOnEvent)
-
-	for {
-		select {
-		case <-upgradeCh:
-			isApplicationOutdated = true
-			u.closeAllConnections()
-		case <-internetOnCh:
-			for _, user := range u.users {
-				if user.store == nil {
-					if err := user.loadStore(); err != nil {
-						log.WithError(err).Error("Failed to load store after reconnecting")
-					}
-				}
-
-				if user.totalBytes == 0 {
-					user.UpdateSpace(nil)
-				}
-			}
-		}
-	}
 }
 
 func (u *Users) loadUsersFromCredentialsStore() error {
@@ -171,7 +140,7 @@ func (u *Users) loadConnectedUser(ctx context.Context, user *User, creds *creden
 		}
 
 		if pmapi.IsFailedAuth(connectErr) {
-			if logoutErr := user.logout(); logoutErr != nil {
+			if logoutErr := user.Logout(); logoutErr != nil {
 				logrus.WithError(logoutErr).Warn("Could not logout user")
 			}
 		}
@@ -232,16 +201,12 @@ func (u *Users) FinishLogin(client pmapi.Client, auth *pmapi.Auth, password []by
 			return nil, errors.Wrap(err, "failed to reconnect existing user")
 		}
 
-		u.events.Emit(events.UserRefreshEvent, apiUser.ID)
-
 		return user, nil
 	}
 
 	if err := u.addNewUser(client, apiUser, auth, passphrase); err != nil {
 		return nil, errors.Wrap(err, "failed to add new user")
 	}
-
-	u.events.Emit(events.UserRefreshEvent, apiUser.ID)
 
 	return u.GetUser(apiUser.ID)
 }
@@ -344,7 +309,6 @@ func (u *Users) ClearData() error {
 func (u *Users) DeleteUser(userID string, clearStore bool) error {
 	u.lock.Lock()
 	defer u.lock.Unlock()
-	defer u.events.Emit(events.UserRefreshEvent, userID)
 
 	log := log.WithField("user", userID)
 

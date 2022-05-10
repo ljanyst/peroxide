@@ -22,7 +22,6 @@ import (
 	"math/rand"
 	"time"
 
-	bridgeEvents "github.com/ljanyst/peroxide/pkg/events"
 	"github.com/ljanyst/peroxide/pkg/listener"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
 	"github.com/pkg/errors"
@@ -226,7 +225,6 @@ func (loop *eventLoop) processNextEvent() (more bool, err error) { // nolint[fun
 
 		if err != nil && isFdCloseToULimit() {
 			l.Warn("Ulimit reached")
-			loop.listener.Emit(bridgeEvents.RestartBridgeEvent, "")
 			err = nil
 		}
 
@@ -316,7 +314,6 @@ func (loop *eventLoop) processEvent(event *pmapi.Event) (err error) {
 
 	if event.User != nil {
 		loop.user.UpdateSpace(event.User)
-		loop.listener.Emit(bridgeEvents.UserRefreshEvent, loop.user.ID())
 	}
 
 	// One would expect that every event would contain MessageCount as part of
@@ -353,7 +350,6 @@ func (loop *eventLoop) processAddresses(log *logrus.Entry, addressEvents []*pmap
 		switch addressEvent.Action {
 		case pmapi.EventCreate:
 			log.WithField("email", addressEvent.Address.Email).Debug("Address was created")
-			loop.listener.Emit(bridgeEvents.AddressChangedEvent, loop.user.GetPrimaryAddress())
 
 		case pmapi.EventUpdate:
 			oldAddress := oldList.ByID(addressEvent.ID)
@@ -364,9 +360,6 @@ func (loop *eventLoop) processAddresses(log *logrus.Entry, addressEvents []*pmap
 
 			email := oldAddress.Email
 			log.WithField("email", email).Debug("Address was updated")
-			if addressEvent.Address.Receive != oldAddress.Receive {
-				loop.listener.Emit(bridgeEvents.AddressChangedLogoutEvent, email)
-			}
 
 		case pmapi.EventDelete:
 			oldAddress := oldList.ByID(addressEvent.ID)
@@ -378,7 +371,6 @@ func (loop *eventLoop) processAddresses(log *logrus.Entry, addressEvents []*pmap
 			email := oldAddress.Email
 			log.WithField("email", email).Debug("Address was deleted")
 			loop.user.CloseConnection(email)
-			loop.listener.Emit(bridgeEvents.AddressChangedLogoutEvent, email)
 		case pmapi.EventUpdateFlags:
 			log.Error("EventUpdateFlags for address event is uknown operation")
 		}

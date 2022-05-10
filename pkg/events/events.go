@@ -19,42 +19,14 @@
 package events
 
 import (
-	"time"
-
 	"github.com/ljanyst/peroxide/pkg/listener"
 )
 
 // Constants of events used by the event listener in bridge.
 const (
-	ErrorEvent                   = "error"
-	CredentialsErrorEvent        = "credentialsError"
-	CloseConnectionEvent         = "closeConnection"
-	LogoutEvent                  = "logout"
-	AddressChangedEvent          = "addressChanged"
-	AddressChangedLogoutEvent    = "addressChangedLogout"
-	UserRefreshEvent             = "userRefresh"
-	RestartBridgeEvent           = "restartBridge"
-	InternetOffEvent             = "internetOff"
-	InternetOnEvent              = "internetOn"
-	SecondInstanceEvent          = "secondInstance"
-	OutgoingNoEncEvent           = "outgoingNoEncryption"
-	NoActiveKeyForRecipientEvent = "noActiveKeyForRecipient"
-	UpgradeApplicationEvent      = "upgradeApplication"
-	TLSCertIssue                 = "tlsCertPinningIssue"
-	UserChangeDone               = "QMLUserChangedDone"
-
-	// LogoutEventTimeout is the minimum time to permit between logout events being sent.
-	LogoutEventTimeout = 3 * time.Minute
+	CloseConnectionEvent = "closeConnection"
 )
 
 // SetupEvents specific to event type and data.
 func SetupEvents(listener listener.Listener) {
-	listener.SetLimit(LogoutEvent, LogoutEventTimeout)
-	listener.SetBuffer(ErrorEvent)
-	listener.SetBuffer(CredentialsErrorEvent)
-	listener.SetBuffer(InternetOffEvent)
-	listener.SetBuffer(UpgradeApplicationEvent)
-	listener.SetBuffer(TLSCertIssue)
-	listener.SetBuffer(UserRefreshEvent)
-	listener.Book(UserChangeDone)
 }

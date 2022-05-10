@@ -90,7 +90,6 @@ func (c *controller) ListenAndServe() {
 
 	if err != nil {
 		l.WithError(err).Error("Cannot start listner.")
-		c.signals.Emit(events.ErrorEvent, string(c.server.Protocol())+" failed: "+err.Error())
 		return
 	}
 

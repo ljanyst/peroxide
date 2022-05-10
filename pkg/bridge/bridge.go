@@ -77,16 +77,14 @@ func (b *Bridge) Configure(configFile string) error {
 	}
 
 	cfg := pmapi.NewConfig()
-	cfg.UpgradeApplicationHandler = func() { listener.Emit(events.UpgradeApplicationEvent, "") }
-	cfg.TLSIssueHandler = func() { listener.Emit(events.TLSCertIssue, "") }
+	cfg.UpgradeApplicationHandler = func() {
+		log.Error("Application needs to be upgraded")
+	}
+	cfg.TLSIssueHandler = func() {
+		log.Error("TLS Certificate Issue")
+	}
 
 	cm := pmapi.New(cfg)
-
-	cm.AddConnectionObserver(pmapi.NewConnectionObserver(
-		func() { listener.Emit(events.InternetOffEvent, "") },
-		func() { listener.Emit(events.InternetOnEvent, "") },
-	))
-
 	jar, err := cookies.NewCookieJar(settingsObj.Get(settings.CookieJar))
 	if err != nil {
 		return err

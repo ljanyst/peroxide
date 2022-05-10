@@ -149,7 +149,7 @@ func (u *User) handleAuthRefresh(auth *pmapi.AuthRefresh) {
 	u.log.Debug("User received auth refresh update")
 
 	if auth == nil {
-		if err := u.logout(); err != nil {
+		if err := u.Logout(); err != nil {
 			log.WithError(err).
 				WithField("userID", u.userID).
 				Error("User logout failed while watching API auths")
@@ -278,7 +278,7 @@ func (u *User) unlockIfNecessary() error {
 	}
 
 	if pmapi.IsFailedAuth(err) || pmapi.IsFailedUnlock(err) {
-		if logoutErr := u.logout(); logoutErr != nil {
+		if logoutErr := u.Logout(); logoutErr != nil {
 			u.log.WithError(logoutErr).Warn("Could not logout user")
 		}
 		return errors.Wrap(err, "failed to unlock user")
@@ -372,16 +372,10 @@ func (u *User) GetBridgePassword() string {
 // CheckBridgeLogin checks whether the user is logged in and the bridge
 // IMAP/SMTP password is correct.
 func (u *User) CheckBridgeLogin(password string) error {
-	if isApplicationOutdated {
-		u.listener.Emit(events.UpgradeApplicationEvent, "")
-		return pmapi.ErrUpgradeApplication
-	}
-
 	u.lock.RLock()
 	defer u.lock.RUnlock()
 
 	if !u.creds.IsConnected() {
-		u.listener.Emit(events.LogoutEvent, u.userID)
 		return ErrLoggedOutUser
 	}
 
@@ -392,7 +386,6 @@ func (u *User) CheckBridgeLogin(password string) error {
 func (u *User) UpdateUser(ctx context.Context) error {
 	u.lock.Lock()
 	defer u.lock.Unlock()
-	defer u.listener.Emit(events.UserRefreshEvent, u.userID)
 
 	user, err := u.client.UpdateUser(ctx)
 	if err != nil {
@@ -422,7 +415,6 @@ func (u *User) SwitchAddressMode() error {
 
 	u.lock.Lock()
 	defer u.lock.Unlock()
-	defer u.listener.Emit(events.UserRefreshEvent, u.userID)
 
 	u.CloseAllConnections()
 
@@ -450,28 +442,11 @@ func (u *User) SwitchAddressMode() error {
 	return nil
 }
 
-// logout is the same as Logout, but for internal purposes (logged out from
-// the server) which emits LogoutEvent to notify other parts of the app.
-func (u *User) logout() error {
-	u.lock.Lock()
-	wasConnected := u.creds.IsConnected()
-	u.lock.Unlock()
-
-	err := u.Logout()
-
-	if wasConnected {
-		u.listener.Emit(events.LogoutEvent, u.userID)
-	}
-
-	return err
-}
-
 // Logout logs out the user from pmapi, the credentials store, the mail store, and tries to remove as much
 // sensitive data as possible.
 func (u *User) Logout() error {
 	u.lock.Lock()
 	defer u.lock.Unlock()
-	defer u.listener.Emit(events.UserRefreshEvent, u.userID)
 
 	u.log.Debug("Logging out user")
 
