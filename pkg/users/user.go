@@ -22,6 +22,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/ljanyst/peroxide/pkg/events"
 	"github.com/ljanyst/peroxide/pkg/listener"
@@ -37,10 +38,11 @@ var ErrLoggedOutUser = errors.New("account is logged out, use the app to login a
 
 // User is a struct on top of API client and credentials store.
 type User struct {
-	log        *logrus.Entry
-	listener   listener.Listener
-	client     pmapi.Client
-	credStorer CredentialsStorer
+	log           *logrus.Entry
+	listener      listener.Listener
+	client        pmapi.Client
+	clientManager pmapi.Manager
+	credStorer    CredentialsStorer
 
 	storeFactory StoreMaker
 	store        *store.Store
@@ -60,24 +62,26 @@ func newUser(
 	eventListener listener.Listener,
 	credStorer CredentialsStorer,
 	storeFactory StoreMaker,
-) (*User, *credentials.Credentials, error) {
+	clientManager pmapi.Manager,
+) (*User, error) {
 	log := log.WithField("user", userID)
 
 	log.Debug("Creating or loading user")
 
 	creds, err := credStorer.Get(userID)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to load user credentials")
+		return nil, errors.Wrap(err, "failed to load user credentials")
 	}
 
 	return &User{
-		log:          log,
-		listener:     eventListener,
-		credStorer:   credStorer,
-		storeFactory: storeFactory,
-		userID:       userID,
-		creds:        creds,
-	}, creds, nil
+		log:           log,
+		listener:      eventListener,
+		clientManager: clientManager,
+		credStorer:    credStorer,
+		storeFactory:  storeFactory,
+		userID:        userID,
+		creds:         creds,
+	}, nil
 }
 
 // connect connects a user. This includes
@@ -85,16 +89,13 @@ func newUser(
 // - loading its credentials from the credentials store
 // - loading and unlocking its PGP keys
 // - loading its store.
-func (u *User) connect(client pmapi.Client, creds *credentials.Credentials) error {
+func (u *User) connect(client pmapi.Client) error {
 	u.log.Info("Connecting user")
 
 	// Connected users have an API client.
 	u.client = client
 
 	u.client.AddAuthRefreshHandler(u.handleAuthRefresh)
-
-	// Save the latest credentials for the user.
-	u.creds = creds
 
 	// Connected users have unlocked keys.
 	if err := u.unlockIfNecessary(); err != nil {
@@ -135,7 +136,7 @@ func (u *User) loadStore() error {
 		u.store = nil
 	}
 
-	store, err := u.storeFactory.New(u)
+	store, err := u.storeFactory.New(u, u.creds.IsConnected())
 	if err != nil {
 		return errors.Wrap(err, "failed to create store")
 	}
@@ -380,6 +381,49 @@ func (u *User) CheckBridgeLogin(password string) error {
 	}
 
 	return u.creds.CheckPassword(password)
+}
+
+func (u *User) BringOnline(username, password string) error {
+	u.lock.Lock()
+	defer u.lock.Unlock()
+
+	if u.client != nil {
+		return nil
+	}
+
+	if !u.creds.IsConnected() {
+		return u.connect(u.clientManager.NewClient("", "", "", time.Time{}))
+	}
+
+	uid, ref, err := u.creds.SplitAPIToken()
+	if err != nil {
+		return errors.Wrap(err, "could not get user's refresh token")
+	}
+
+	ctx := pmapi.ContextWithoutRetry(context.Background())
+	client, auth, err := u.clientManager.NewClientWithRefresh(ctx, uid, ref)
+	if err != nil {
+		connectErr := u.connect(u.clientManager.NewClient(uid, "", ref, time.Time{}))
+
+		switch errors.Cause(err) {
+		case pmapi.ErrNoConnection, pmapi.ErrUpgradeApplication:
+			return connectErr
+		}
+
+		if pmapi.IsFailedAuth(connectErr) {
+			if logoutErr := u.Logout(); logoutErr != nil {
+				logrus.WithError(logoutErr).Warn("Could not logout user")
+			}
+		}
+		return errors.Wrap(err, "could not refresh token")
+	}
+
+	// Update the user's credentials with the latest auth used to connect this user.
+	if u.creds, err = u.credStorer.UpdateToken(u.creds.UserID, auth.UID, auth.RefreshToken); err != nil {
+		return errors.Wrap(err, "could not create get user's refresh token")
+	}
+
+	return u.connect(client)
 }
 
 // UpdateUser updates user details from API and saves to the credentials.

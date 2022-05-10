@@ -52,7 +52,7 @@ func NewStoreFactory(
 }
 
 // New creates new store for given user.
-func (f *StoreFactory) New(user BridgeUser) (*Store, error) {
+func (f *StoreFactory) New(user BridgeUser, connected bool) (*Store, error) {
 	return New(
 		user,
 		f.listener,
@@ -60,6 +60,7 @@ func (f *StoreFactory) New(user BridgeUser) (*Store, error) {
 		f.builder,
 		getUserStorePath(f.settings.Get(settings.CacheDir), user.ID()),
 		f.events,
+		connected,
 	)
 }
 

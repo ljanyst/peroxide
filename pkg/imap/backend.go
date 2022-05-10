@@ -95,7 +95,7 @@ func newIMAPBackend(
 	}
 }
 
-func (ib *imapBackend) getUser(address string) (*imapUser, error) {
+func (ib *imapBackend) getUser(address, username, password string) (*imapUser, error) {
 	ib.usersLocker.Lock()
 	defer ib.usersLocker.Unlock()
 
@@ -104,15 +104,19 @@ func (ib *imapBackend) getUser(address string) (*imapUser, error) {
 	if ok {
 		return imapUser, nil
 	}
-	return ib.createUser(address)
+	return ib.createUser(address, username, password)
 }
 
 // createUser require that address MUST be in lowercase.
-func (ib *imapBackend) createUser(address string) (*imapUser, error) {
+func (ib *imapBackend) createUser(address, username, password string) (*imapUser, error) {
 	log.WithField("address", address).Debug("Creating new IMAP user")
 
 	user, err := ib.usersMgr.GetUser(address)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := user.BringOnline(username, password); err != nil {
 		return nil, err
 	}
 
@@ -153,7 +157,7 @@ func (ib *imapBackend) deleteUser(address string) {
 
 // Login authenticates a user.
 func (ib *imapBackend) Login(_ *imap.ConnInfo, username, password string) (goIMAPBackend.User, error) {
-	imapUser, err := ib.getUser(username)
+	imapUser, err := ib.getUser(username, username, password)
 	if err != nil {
 		log.WithError(err).Warn("Cannot get user")
 		return nil, err

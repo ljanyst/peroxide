@@ -39,6 +39,6 @@ type CredentialsStorer interface {
 }
 
 type StoreMaker interface {
-	New(user store.BridgeUser) (*store.Store, error)
+	New(user store.BridgeUser, connected bool) (*store.Store, error)
 	Remove(userID string) error
 }

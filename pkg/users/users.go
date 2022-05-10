@@ -22,12 +22,10 @@ import (
 	"context"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/ljanyst/peroxide/pkg/listener"
 	"github.com/ljanyst/peroxide/pkg/pmapi"
-	"github.com/ljanyst/peroxide/pkg/users/credentials"
 	"github.com/pkg/errors"
 	logrus "github.com/sirupsen/logrus"
 )
@@ -96,63 +94,16 @@ func (u *Users) loadUsersFromCredentialsStore() error {
 
 	for _, userID := range userIDs {
 		l := log.WithField("user", userID)
-		user, creds, err := newUser(userID, u.events, u.credStorer, u.storeFactory)
+		user, err := newUser(userID, u.events, u.credStorer, u.storeFactory, u.clientManager)
 		if err != nil {
 			l.WithError(err).Warn("Could not create user, skipping")
 			continue
 		}
 
 		u.users = append(u.users, user)
-
-		if creds.IsConnected() {
-			// If there is no connection, we don't want to retry. Load should
-			// happen fast enough to not block GUI. When connection is back up,
-			// watchEvents and unlockIfNecessary will finish user init later.
-			if err := u.loadConnectedUser(pmapi.ContextWithoutRetry(context.Background()), user, creds); err != nil {
-				l.WithError(err).Warn("Could not load connected user")
-			}
-		} else {
-			l.Warn("User is disconnected and must be connected manually")
-			if err := user.connect(u.clientManager.NewClient("", "", "", time.Time{}), creds); err != nil {
-				l.WithError(err).Warn("Could not load disconnected user")
-			}
-		}
 	}
 
 	return err
-}
-
-func (u *Users) loadConnectedUser(ctx context.Context, user *User, creds *credentials.Credentials) error {
-	uid, ref, err := creds.SplitAPIToken()
-	if err != nil {
-		return errors.Wrap(err, "could not get user's refresh token")
-	}
-
-	client, auth, err := u.clientManager.NewClientWithRefresh(ctx, uid, ref)
-	if err != nil {
-		// When client cannot be refreshed right away due to no connection,
-		// we create client which will refresh automatically when possible.
-		connectErr := user.connect(u.clientManager.NewClient(uid, "", ref, time.Time{}), creds)
-
-		switch errors.Cause(err) {
-		case pmapi.ErrNoConnection, pmapi.ErrUpgradeApplication:
-			return connectErr
-		}
-
-		if pmapi.IsFailedAuth(connectErr) {
-			if logoutErr := user.Logout(); logoutErr != nil {
-				logrus.WithError(logoutErr).Warn("Could not logout user")
-			}
-		}
-		return errors.Wrap(err, "could not refresh token")
-	}
-
-	// Update the user's credentials with the latest auth used to connect this user.
-	if creds, err = u.credStorer.UpdateToken(creds.UserID, auth.UID, auth.RefreshToken); err != nil {
-		return errors.Wrap(err, "could not create get user's refresh token")
-	}
-
-	return user.connect(client, creds)
 }
 
 func (u *Users) closeAllConnections() {
@@ -191,14 +142,9 @@ func (u *Users) FinishLogin(client pmapi.Client, auth *pmapi.Auth, password []by
 		}
 
 		// Update the password in case the user changed it.
-		creds, err := u.credStorer.UpdatePassword(apiUser.ID, passphrase)
+		_, err := u.credStorer.UpdatePassword(apiUser.ID, passphrase)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to update password of user in credentials store")
-		}
-
-		// will go and unlock cache if not already done
-		if err := user.connect(client, creds); err != nil {
-			return nil, errors.Wrap(err, "failed to reconnect existing user")
 		}
 
 		return user, nil
@@ -220,13 +166,9 @@ func (u *Users) addNewUser(client pmapi.Client, apiUser *pmapi.User, auth *pmapi
 		return errors.Wrap(err, "failed to add user credentials to credentials store")
 	}
 
-	user, creds, err := newUser(apiUser.ID, u.events, u.credStorer, u.storeFactory)
+	user, err := newUser(apiUser.ID, u.events, u.credStorer, u.storeFactory, u.clientManager)
 	if err != nil {
 		return errors.Wrap(err, "failed to create new user")
-	}
-
-	if err := user.connect(client, creds); err != nil {
-		return errors.Wrap(err, "failed to connect new user")
 	}
 
 	u.users = append(u.users, user)

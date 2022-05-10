@@ -150,6 +150,7 @@ func New( // nolint[funlen]
 	builder *message.Builder,
 	path string,
 	currentEvents *Events,
+	connected bool,
 ) (store *Store, err error) {
 	if user == nil || listener == nil || currentEvents == nil {
 		return nil, fmt.Errorf("missing parameters - user: %v, listener: %v, currentEvents: %v", user, listener, currentEvents)
@@ -201,7 +202,7 @@ func New( // nolint[funlen]
 		return
 	}
 
-	if user.IsConnected() {
+	if connected {
 		store.eventLoop = newEventLoop(currentEvents, store, user, listener)
 		go func() {
 			store.eventLoop.start()

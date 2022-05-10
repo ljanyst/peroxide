@@ -61,6 +61,11 @@ func (sb *smtpBackend) Login(_ *goSMTPBackend.ConnectionState, username, passwor
 		log.Warn("Cannot get user: ", err)
 		return nil, err
 	}
+
+	if err := user.BringOnline(username, password); err != nil {
+		return nil, err
+	}
+
 	if err := user.CheckBridgeLogin(password); err != nil {
 		log.WithError(err).Error("Could not check bridge password")
 		// Apple Mail sometimes generates a lot of requests very quickly. It's good practice
@@ -68,6 +73,7 @@ func (sb *smtpBackend) Login(_ *goSMTPBackend.ConnectionState, username, passwor
 		time.Sleep(10 * time.Second)
 		return nil, err
 	}
+
 	// Client can log in only using address so we can properly close all SMTP connections.
 	addressID, err := user.GetAddressID(username)
 	if err != nil {
