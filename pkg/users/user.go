@@ -67,7 +67,6 @@ func newUser(
 
 	creds, err := credStorer.Get(userID)
 	if err != nil {
-		notifyKeychainRepair(eventListener, err)
 		return nil, nil, errors.Wrap(err, "failed to load user credentials")
 	}
 
@@ -160,7 +159,6 @@ func (u *User) handleAuthRefresh(auth *pmapi.AuthRefresh) {
 
 	creds, err := u.credStorer.UpdateToken(u.userID, auth.UID, auth.RefreshToken)
 	if err != nil {
-		notifyKeychainRepair(u.listener, err)
 		u.log.WithError(err).Error("Failed to update refresh token in credentials store")
 		return
 	}
@@ -407,7 +405,6 @@ func (u *User) UpdateUser(ctx context.Context) error {
 
 	creds, err := u.credStorer.UpdateEmails(u.userID, u.client.Addresses().ActiveEmails())
 	if err != nil {
-		notifyKeychainRepair(u.listener, err)
 		return err
 	}
 
@@ -445,7 +442,6 @@ func (u *User) SwitchAddressMode() error {
 
 	creds, err := u.credStorer.SwitchAddressMode(u.userID)
 	if err != nil {
-		notifyKeychainRepair(u.listener, err)
 		return errors.Wrap(err, "could not switch credentials store address mode")
 	}
 
@@ -491,11 +487,9 @@ func (u *User) Logout() error {
 
 	creds, err := u.credStorer.Logout(u.userID)
 	if err != nil {
-		notifyKeychainRepair(u.listener, err)
 		u.log.WithError(err).Warn("Could not log user out from credentials store")
 
 		if err := u.credStorer.Delete(u.userID); err != nil {
-			notifyKeychainRepair(u.listener, err)
 			u.log.WithError(err).Error("Could not delete user from credentials store")
 		}
 	} else {
