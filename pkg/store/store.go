@@ -267,11 +267,7 @@ func (store *Store) init(firstInit bool) (err error) {
 	// If it's the first time we are creating the store, use the mode set in the
 	// user's credentials, otherwise read it from the DB (if present).
 	if firstInit {
-		if store.user.IsCombinedAddressMode() {
-			err = store.setAddressMode(combinedMode)
-		} else {
-			err = store.setAddressMode(splitMode)
-		}
+		err = store.setAddressMode(combinedMode)
 		if err != nil {
 			return errors.Wrap(err, "first init setting store address mode")
 		}

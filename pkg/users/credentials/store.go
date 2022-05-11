@@ -18,31 +18,45 @@
 package credentials
 
 import (
+	"encoding/json"
 	"errors"
-	"fmt"
+	"os"
 	"sort"
 	"sync"
-	"time"
 
-	"github.com/ljanyst/peroxide/pkg/keychain"
 	"github.com/sirupsen/logrus"
 )
 
-var storeLocker = sync.RWMutex{} //nolint[gochecknoglobals]
+var (
+	ErrNotFound = errors.New("Credentials not found")
+	log         = logrus.WithField("pkg", "credentials")
+)
 
 // Store is an encrypted credentials store.
 type Store struct {
-	secrets *keychain.Keychain
+	lock     sync.RWMutex
+	creds    map[string]*Credentials
+	filePath string
 }
 
 // NewStore creates a new encrypted credentials store.
-func NewStore(keychain *keychain.Keychain) *Store {
-	return &Store{secrets: keychain}
+func NewStore(filePath string) (*Store, error) {
+	s := &Store{
+		creds:    make(map[string]*Credentials),
+		filePath: filePath,
+	}
+
+	err := s.loadCredentials()
+	if err != nil {
+		return nil, err
+	}
+
+	return s, nil
 }
 
 func (s *Store) Add(userID, userName, uid, ref string, mailboxPassword []byte, emails []string) (*Credentials, error) {
-	storeLocker.Lock()
-	defer storeLocker.Unlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	log.WithFields(logrus.Fields{
 		"user":     userID,
@@ -53,220 +67,146 @@ func (s *Store) Add(userID, userName, uid, ref string, mailboxPassword []byte, e
 	creds := &Credentials{
 		UserID:          userID,
 		Name:            userName,
+		Emails:          emails,
 		APIToken:        uid + ":" + ref,
 		MailboxPassword: mailboxPassword,
-		IsHidden:        false,
 	}
 
-	creds.SetEmailList(emails)
-
-	currentCredentials, err := s.get(userID)
-	if err == nil {
+	currentCredentials, ok := s.creds[userID]
+	if ok {
 		log.Info("Updating credentials of existing user")
 		creds.BridgePassword = currentCredentials.BridgePassword
-		creds.IsCombinedAddressMode = currentCredentials.IsCombinedAddressMode
-		creds.Timestamp = currentCredentials.Timestamp
 	} else {
 		log.Info("Generating credentials for new user")
 		creds.BridgePassword = generatePassword()
-		creds.IsCombinedAddressMode = true
-		creds.Timestamp = time.Now().Unix()
 	}
 
-	if err := s.saveCredentials(creds); err != nil {
+	s.creds[userID] = creds
+
+	if err := s.saveCredentials(); err != nil {
 		return nil, err
 	}
 
 	return creds, nil
 }
 
-func (s *Store) SwitchAddressMode(userID string) (*Credentials, error) {
-	storeLocker.Lock()
-	defer storeLocker.Unlock()
-
-	credentials, err := s.get(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	credentials.IsCombinedAddressMode = !credentials.IsCombinedAddressMode
-	credentials.BridgePassword = generatePassword()
-
-	return credentials, s.saveCredentials(credentials)
-}
-
 func (s *Store) UpdateEmails(userID string, emails []string) (*Credentials, error) {
-	storeLocker.Lock()
-	defer storeLocker.Unlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-	credentials, err := s.get(userID)
-	if err != nil {
-		return nil, err
+	credentials, ok := s.creds[userID]
+	if !ok {
+		return nil, ErrNotFound
 	}
 
-	credentials.SetEmailList(emails)
+	credentials.Emails = emails
 
-	return credentials, s.saveCredentials(credentials)
+	return credentials, s.saveCredentials()
 }
 
 func (s *Store) UpdatePassword(userID string, password []byte) (*Credentials, error) {
-	storeLocker.Lock()
-	defer storeLocker.Unlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-	credentials, err := s.get(userID)
-	if err != nil {
-		return nil, err
+	credentials, ok := s.creds[userID]
+	if !ok {
+		return nil, ErrNotFound
 	}
 
 	credentials.MailboxPassword = password
 
-	return credentials, s.saveCredentials(credentials)
+	return credentials, s.saveCredentials()
 }
 
 func (s *Store) UpdateToken(userID, uid, ref string) (*Credentials, error) {
-	storeLocker.Lock()
-	defer storeLocker.Unlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-	credentials, err := s.get(userID)
-	if err != nil {
-		return nil, err
+	credentials, ok := s.creds[userID]
+	if !ok {
+		return nil, ErrNotFound
 	}
 
 	credentials.APIToken = uid + ":" + ref
 
-	return credentials, s.saveCredentials(credentials)
+	return credentials, s.saveCredentials()
 }
 
 func (s *Store) Logout(userID string) (*Credentials, error) {
-	storeLocker.Lock()
-	defer storeLocker.Unlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-	credentials, err := s.get(userID)
-	if err != nil {
-		return nil, err
+	credentials, ok := s.creds[userID]
+	if !ok {
+		return nil, ErrNotFound
 	}
 
 	credentials.Logout()
 
-	return credentials, s.saveCredentials(credentials)
+	return credentials, s.saveCredentials()
 }
 
 // List returns a list of usernames that have credentials stored.
-func (s *Store) List() (userIDs []string, err error) {
-	storeLocker.RLock()
-	defer storeLocker.RUnlock()
+func (s *Store) List() ([]string, error) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
 
 	log.Trace("Listing credentials in credentials store")
 
-	var allUserIDs []string
-	if allUserIDs, err = s.secrets.List(); err != nil {
-		log.WithError(err).Error("Could not list credentials")
-		return
+	userIDs := []string{}
+	for id := range s.creds {
+		userIDs = append(userIDs, id)
 	}
+	sort.Strings(userIDs)
 
-	credentialList := []*Credentials{}
-	for _, userID := range allUserIDs {
-		creds, getErr := s.get(userID)
-		if getErr != nil {
-			log.WithField("userID", userID).WithError(getErr).Warn("Failed to get credentials")
-			continue
-		}
-
-		if creds.Timestamp == 0 {
-			continue
-		}
-
-		// Old credentials using username as a key does not work with new code.
-		// We need to ask user to login again to get ID from API and migrate creds.
-		if creds.UserID == creds.Name && creds.APIToken != "" {
-			creds.Logout()
-			_ = s.saveCredentials(creds)
-		}
-
-		credentialList = append(credentialList, creds)
-	}
-
-	sort.Slice(credentialList, func(i, j int) bool {
-		return credentialList[i].Timestamp < credentialList[j].Timestamp
-	})
-
-	for _, credentials := range credentialList {
-		userIDs = append(userIDs, credentials.UserID)
-	}
-
-	return userIDs, err
-}
-
-func (s *Store) GetAndCheckPassword(userID, password string) (creds *Credentials, err error) {
-	storeLocker.RLock()
-	defer storeLocker.RUnlock()
-
-	log.WithFields(logrus.Fields{
-		"userID": userID,
-	}).Debug("Checking bridge password")
-
-	credentials, err := s.Get(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := credentials.CheckPassword(password); err != nil {
-		log.WithFields(logrus.Fields{
-			"userID": userID,
-			"err":    err,
-		}).Debug("Incorrect bridge password")
-
-		return nil, err
-	}
-
-	return credentials, nil
+	return userIDs, nil
 }
 
 func (s *Store) Get(userID string) (creds *Credentials, err error) {
-	storeLocker.RLock()
-	defer storeLocker.RUnlock()
+	s.lock.RLock()
+	defer s.lock.RUnlock()
 
-	return s.get(userID)
-}
-
-func (s *Store) get(userID string) (*Credentials, error) {
-	log := log.WithField("user", userID)
-
-	_, secret, err := s.secrets.Get(userID)
-	if err != nil {
-		return nil, err
+	creds, ok := s.creds[userID]
+	if !ok {
+		return nil, ErrNotFound
 	}
-
-	if secret == "" {
-		return nil, errors.New("secret is empty")
-	}
-
-	credentials := &Credentials{UserID: userID}
-
-	if err := credentials.Unmarshal(secret); err != nil {
-		log.WithError(fmt.Errorf("malformed secret: %w", err)).Error("Could not unmarshal secret")
-
-		if err := s.secrets.Delete(userID); err != nil {
-			log.WithError(err).Error("Failed to remove malformed secret")
-		}
-
-		return nil, err
-	}
-
-	return credentials, nil
-}
-
-// saveCredentials encrypts and saves password to the keychain store.
-func (s *Store) saveCredentials(credentials *Credentials) error {
-	credentials.Version = keychain.Version
-
-	return s.secrets.Put(credentials.UserID, credentials.Marshal())
+	return creds, nil
 }
 
 // Delete removes credentials from the store.
 func (s *Store) Delete(userID string) (err error) {
-	storeLocker.Lock()
-	defer storeLocker.Unlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-	return s.secrets.Delete(userID)
+	_, ok := s.creds[userID]
+	if !ok {
+		return ErrNotFound
+	}
+
+	delete(s.creds, userID)
+	return nil
+}
+
+func (s *Store) saveCredentials() error {
+	f, err := os.Create(s.filePath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	return json.NewEncoder(f).Encode(s.creds)
+}
+
+func (s *Store) loadCredentials() error {
+	f, err := os.Open(s.filePath)
+	if os.IsNotExist(err) {
+		return nil
+	}
+
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	return json.NewDecoder(f).Decode(&s.creds)
 }

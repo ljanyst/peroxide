@@ -28,7 +28,6 @@ type BridgeUser interface {
 	ID() string
 	GetAddressID(address string) (string, error)
 	IsConnected() bool
-	IsCombinedAddressMode() bool
 	GetPrimaryAddress() string
 	GetStoreAddresses() []string
 	GetClient() pmapi.Client

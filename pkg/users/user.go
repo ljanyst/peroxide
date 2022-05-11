@@ -295,18 +295,6 @@ func (u *User) unlockIfNecessary() error {
 	return nil
 }
 
-// IsCombinedAddressMode returns whether user is set in combined or split mode.
-// Combined mode is the default mode and is what users typically need.
-// Split mode is mostly for outlook as it cannot handle sending e-mails from an
-// address other than the primary one.
-func (u *User) IsCombinedAddressMode() bool {
-	if u.store != nil {
-		return u.store.IsCombinedMode()
-	}
-
-	return u.creds.IsCombinedAddressMode
-}
-
 // GetPrimaryAddress returns the user's original address (which is
 // not necessarily the same as the primary address, because a primary address
 // might be an alias and be in position one).
@@ -314,7 +302,7 @@ func (u *User) GetPrimaryAddress() string {
 	u.lock.RLock()
 	defer u.lock.RUnlock()
 
-	return u.creds.EmailList()[0]
+	return u.creds.Emails[0]
 }
 
 // GetStoreAddresses returns all addresses used by the store (so in combined mode,
@@ -323,11 +311,7 @@ func (u *User) GetStoreAddresses() []string {
 	u.lock.RLock()
 	defer u.lock.RUnlock()
 
-	if u.IsCombinedAddressMode() {
-		return u.creds.EmailList()[:1]
-	}
-
-	return u.creds.EmailList()
+	return u.creds.Emails[:1]
 }
 
 // GetAddresses returns list of all addresses.
@@ -335,7 +319,7 @@ func (u *User) GetAddresses() []string {
 	u.lock.RLock()
 	defer u.lock.RUnlock()
 
-	return u.creds.EmailList()
+	return u.creds.Emails
 }
 
 // GetAddressID returns the API ID of the given address.
@@ -452,40 +436,6 @@ func (u *User) UpdateUser(ctx context.Context) error {
 	return nil
 }
 
-// SwitchAddressMode changes mode from combined to split and vice versa. The mode to switch to is determined by the
-// state of the user's credentials in the credentials store. See `IsCombinedAddressMode` for more details.
-func (u *User) SwitchAddressMode() error {
-	u.log.Trace("Switching user address mode")
-
-	u.lock.Lock()
-	defer u.lock.Unlock()
-
-	u.CloseAllConnections()
-
-	if u.store == nil {
-		return errors.New("store is not initialised")
-	}
-
-	newAddressModeState := !u.IsCombinedAddressMode()
-
-	if err := u.store.UseCombinedMode(newAddressModeState); err != nil {
-		return errors.Wrap(err, "could not switch store address mode")
-	}
-
-	if u.creds.IsCombinedAddressMode == newAddressModeState {
-		return nil
-	}
-
-	creds, err := u.credStorer.SwitchAddressMode(u.userID)
-	if err != nil {
-		return errors.Wrap(err, "could not switch credentials store address mode")
-	}
-
-	u.creds = creds
-
-	return nil
-}
-
 // Logout logs out the user from pmapi, the credentials store, the mail store, and tries to remove as much
 // sensitive data as possible.
 func (u *User) Logout() error {
@@ -538,7 +488,7 @@ func (u *User) closeEventLoopAndCacher() {
 
 // CloseAllConnections calls CloseConnection for all users addresses.
 func (u *User) CloseAllConnections() {
-	for _, address := range u.creds.EmailList() {
+	for _, address := range u.creds.Emails {
 		u.CloseConnection(address)
 	}
 

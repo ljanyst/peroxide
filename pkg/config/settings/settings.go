@@ -42,6 +42,7 @@ const (
 	X509Cert              = "X509Cert"
 	CookieJar             = "CookieJar"
 	ServerAddress         = "ServerAddress"
+	CredentialsStore      = "CredentialsStore"
 )
 
 type Settings struct {
@@ -86,5 +87,6 @@ func (s *Settings) setDefaultValues() {
 	s.setDefault(X509Key, filepath.Join(s.settingsDir, "key.pem"))
 	s.setDefault(X509Cert, filepath.Join(s.settingsDir, "cert.pem"))
 	s.setDefault(CookieJar, filepath.Join(s.settingsDir, "cookies.json"))
+	s.setDefault(CredentialsStore, filepath.Join(s.settingsDir, "credentials.json"))
 	s.setDefault(ServerAddress, "127.0.0.1")
 }

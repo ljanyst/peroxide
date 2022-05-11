@@ -22,15 +22,10 @@ import (
 	"github.com/ljanyst/peroxide/pkg/users/credentials"
 )
 
-type Locator interface {
-	Clear() error
-}
-
 type CredentialsStorer interface {
 	List() (userIDs []string, err error)
 	Add(userID, userName, uid, ref string, mailboxPassword []byte, emails []string) (*credentials.Credentials, error)
 	Get(userID string) (*credentials.Credentials, error)
-	SwitchAddressMode(userID string) (*credentials.Credentials, error)
 	UpdateEmails(userID string, emails []string) (*credentials.Credentials, error)
 	UpdatePassword(userID string, password []byte) (*credentials.Credentials, error)
 	UpdateToken(userID, uid, ref string) (*credentials.Credentials, error)

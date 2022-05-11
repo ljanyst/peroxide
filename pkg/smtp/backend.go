@@ -74,16 +74,9 @@ func (sb *smtpBackend) Login(_ *goSMTPBackend.ConnectionState, username, passwor
 		return nil, err
 	}
 
-	// Client can log in only using address so we can properly close all SMTP connections.
-	addressID, err := user.GetAddressID(username)
-	if err != nil {
-		log.Error("Cannot get addressID: ", err)
-		return nil, err
-	}
 	// AddressID is only for split mode--it has to be empty for combined mode.
-	if user.IsCombinedAddressMode() {
-		addressID = ""
-	}
+	addressID := ""
+
 	return newSMTPUser(sb.eventListener, sb, user, username, addressID)
 }
 

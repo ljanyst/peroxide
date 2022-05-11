@@ -30,7 +30,6 @@ import (
 	"github.com/ljanyst/peroxide/pkg/cookies"
 	"github.com/ljanyst/peroxide/pkg/events"
 	"github.com/ljanyst/peroxide/pkg/imap"
-	"github.com/ljanyst/peroxide/pkg/keychain"
 	"github.com/ljanyst/peroxide/pkg/listener"
 	"github.com/ljanyst/peroxide/pkg/logging"
 	"github.com/ljanyst/peroxide/pkg/message"
@@ -71,11 +70,6 @@ func (b *Bridge) Configure(configFile string) error {
 	listener := listener.New()
 	events.SetupEvents(listener)
 
-	kc, err := keychain.NewKeychain("bridge")
-	if err != nil {
-		return err
-	}
-
 	cfg := pmapi.NewConfig()
 	cfg.UpgradeApplicationHandler = func() {
 		log.Error("Application needs to be upgraded")
@@ -106,10 +100,15 @@ func (b *Bridge) Configure(configFile string) error {
 		settingsObj.GetInt(settings.AttachmentWorkers),
 	)
 
+	credStore, err := credentials.NewStore(settingsObj.Get(settings.CredentialsStore))
+	if err != nil {
+		return err
+	}
+
 	u := users.New(
 		listener,
 		cm,
-		credentials.NewStore(kc),
+		credStore,
 		store.NewStoreFactory(settingsObj, listener, cache, builder),
 	)
 

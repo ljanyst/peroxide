@@ -114,9 +114,7 @@ func (im *imapMailbox) createMessage(imapFlags []string, date time.Time, r imap.
 
 	if internalID != "" {
 		if msg, err := im.storeMailbox.GetMessage(internalID); err == nil {
-			if im.user.user.IsCombinedAddressMode() || im.storeAddress.AddressID() == msg.Message().AddressID {
-				return im.labelExistingMessage(msg)
-			}
+			return im.labelExistingMessage(msg)
 		}
 	}
 	return im.importMessage(kr, hdr, body, imapFlags, date)

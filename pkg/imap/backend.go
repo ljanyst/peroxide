@@ -121,11 +121,9 @@ func (ib *imapBackend) createUser(address, username, password string) (*imapUser
 	}
 
 	// Make sure you return the same user for all valid addresses when in combined mode.
-	if user.IsCombinedAddressMode() {
-		address = strings.ToLower(user.GetPrimaryAddress())
-		if combinedUser, ok := ib.users[address]; ok {
-			return combinedUser, nil
-		}
+	address = strings.ToLower(user.GetPrimaryAddress())
+	if combinedUser, ok := ib.users[address]; ok {
+		return combinedUser, nil
 	}
 
 	// Client can log in only using address so we can properly close all IMAP connections.
