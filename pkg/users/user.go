@@ -279,7 +279,7 @@ func (u *User) unlockIfNecessary() error {
 	}
 
 	if pmapi.IsFailedAuth(err) || pmapi.IsFailedUnlock(err) {
-		if logoutErr := u.Logout(); logoutErr != nil {
+		if logoutErr := u.logout(); logoutErr != nil {
 			u.log.WithError(logoutErr).Warn("Could not logout user")
 		}
 		return errors.Wrap(err, "failed to unlock user")
@@ -411,7 +411,7 @@ func (u *User) BringOnline(username, password string) error {
 		}
 
 		if pmapi.IsFailedAuth(connectErr) {
-			if logoutErr := u.Logout(); logoutErr != nil {
+			if logoutErr := u.logout(); logoutErr != nil {
 				logrus.WithError(logoutErr).Warn("Could not logout user")
 			}
 		}
@@ -491,7 +491,10 @@ func (u *User) SwitchAddressMode() error {
 func (u *User) Logout() error {
 	u.lock.Lock()
 	defer u.lock.Unlock()
+	return u.logout()
+}
 
+func (u *User) logout() error {
 	u.log.Debug("Logging out user")
 
 	if !u.creds.IsConnected() {
