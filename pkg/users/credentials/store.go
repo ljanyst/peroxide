@@ -18,8 +18,10 @@
 package credentials
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"sort"
 	"sync"
@@ -28,8 +30,12 @@ import (
 )
 
 var (
-	ErrNotFound = errors.New("Credentials not found")
-	log         = logrus.WithField("pkg", "credentials")
+	ErrNotFound         = errors.New("Credentials not found")
+	ErrLocked           = errors.New("Credentials are locked")
+	ErrDecryptionFailed = errors.New("Decryption of credentials failed")
+	ErrEncryptionFailed = errors.New("Encryption of credentials failed")
+	log                 = logrus.WithField("pkg", "credentials")
+	secretKey           [32]byte
 )
 
 // Store is an encrypted credentials store.
@@ -46,7 +52,23 @@ func NewStore(filePath string) (*Store, error) {
 		filePath: filePath,
 	}
 
-	err := s.loadCredentials()
+	key := os.Getenv("PEROXIDE_CREDENTIALS_KEY")
+	if key == "" {
+		return nil, fmt.Errorf("PEROXIDE_CREDENTIALS_KEY envvar not set")
+	}
+
+	keyBytes, err := base64.StdEncoding.DecodeString(key)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to decode the credentials key: %s", err)
+	}
+
+	if len(keyBytes) != len(secretKey) {
+		return nil, fmt.Errorf("Decoded credentials key is not %d bytes long", len(secretKey))
+	}
+
+	copy(secretKey[:], keyBytes)
+
+	err = s.loadCredentials()
 	if err != nil {
 		return nil, err
 	}
@@ -65,20 +87,27 @@ func (s *Store) Add(userID, userName, uid, ref string, mailboxPassword []byte, e
 	}).Trace("Adding new credentials")
 
 	creds := &Credentials{
-		UserID:          userID,
-		Name:            userName,
-		Emails:          emails,
-		APIToken:        uid + ":" + ref,
-		MailboxPassword: mailboxPassword,
+		UserID: userID,
+		Name:   userName,
+		Emails: emails,
+		Secret: Secret{
+			APIToken:        uid + ":" + ref,
+			MailboxPassword: mailboxPassword,
+		},
+		key: secretKey,
 	}
 
 	currentCredentials, ok := s.creds[userID]
 	if ok {
 		log.Info("Updating credentials of existing user")
-		creds.BridgePassword = currentCredentials.BridgePassword
+		creds.Secret.BridgePassword = currentCredentials.Secret.BridgePassword
 	} else {
 		log.Info("Generating credentials for new user")
-		creds.BridgePassword = generatePassword()
+		creds.Secret.BridgePassword = generatePassword()
+	}
+
+	if err := creds.encrypt(); err != nil {
+		return nil, err
 	}
 
 	s.creds[userID] = creds
@@ -113,7 +142,14 @@ func (s *Store) UpdatePassword(userID string, password []byte) (*Credentials, er
 		return nil, ErrNotFound
 	}
 
-	credentials.MailboxPassword = password
+	if credentials.locked() {
+		return nil, ErrLocked
+	}
+
+	credentials.Secret.MailboxPassword = password
+	if err := credentials.encrypt(); err != nil {
+		return nil, err
+	}
 
 	return credentials, s.saveCredentials()
 }
@@ -127,7 +163,14 @@ func (s *Store) UpdateToken(userID, uid, ref string) (*Credentials, error) {
 		return nil, ErrNotFound
 	}
 
-	credentials.APIToken = uid + ":" + ref
+	if credentials.locked() {
+		return nil, ErrLocked
+	}
+
+	credentials.Secret.APIToken = uid + ":" + ref
+	if err := credentials.encrypt(); err != nil {
+		return nil, err
+	}
 
 	return credentials, s.saveCredentials()
 }
@@ -141,7 +184,15 @@ func (s *Store) Logout(userID string) (*Credentials, error) {
 		return nil, ErrNotFound
 	}
 
-	credentials.Logout()
+	if credentials.locked() {
+		return nil, ErrLocked
+	}
+
+	if err := credentials.encrypt(); err != nil {
+		return nil, err
+	}
+
+	credentials.logout()
 
 	return credentials, s.saveCredentials()
 }
@@ -208,5 +259,14 @@ func (s *Store) loadCredentials() error {
 	}
 	defer f.Close()
 
-	return json.NewDecoder(f).Decode(&s.creds)
+	if err := json.NewDecoder(f).Decode(&s.creds); err != nil {
+		return err
+	}
+
+	for _, v := range s.creds {
+		v.key = secretKey
+		v.decrypt()
+	}
+
+	return nil
 }

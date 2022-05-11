@@ -273,7 +273,7 @@ func (u *User) unlockIfNecessary() error {
 	// client. Unlock should only finish unlocking when connection is back up.
 	// That means it should try it fast enough and not retry if connection
 	// is still down.
-	err := u.client.Unlock(pmapi.ContextWithoutRetry(context.Background()), u.creds.MailboxPassword)
+	err := u.client.Unlock(pmapi.ContextWithoutRetry(context.Background()), u.creds.Secret.MailboxPassword)
 	if err == nil {
 		return nil
 	}
@@ -351,7 +351,7 @@ func (u *User) GetBridgePassword() string {
 	u.lock.RLock()
 	defer u.lock.RUnlock()
 
-	return u.creds.BridgePassword
+	return u.creds.Secret.BridgePassword
 }
 
 // CheckBridgeLogin checks whether the user is logged in and the bridge
@@ -420,7 +420,7 @@ func (u *User) UpdateUser(ctx context.Context) error {
 		return err
 	}
 
-	if err := u.client.ReloadKeys(ctx, u.creds.MailboxPassword); err != nil {
+	if err := u.client.ReloadKeys(ctx, u.creds.Secret.MailboxPassword); err != nil {
 		return errors.Wrap(err, "failed to reload keys")
 	}
 

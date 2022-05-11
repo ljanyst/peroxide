@@ -21,37 +21,48 @@
 package credentials
 
 import (
+	"crypto/rand"
 	"crypto/subtle"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
+
+	"golang.org/x/crypto/nacl/secretbox"
 )
 
-type Credentials struct {
-	UserID          string
-	Name            string
-	Emails          []string
+type Secret struct {
 	APIToken        string
 	MailboxPassword []byte
 	BridgePassword  string
 }
 
-func (s *Credentials) Logout() {
-	s.APIToken = ""
+type Credentials struct {
+	UserID       string
+	Name         string
+	Emails       []string
+	Secret       Secret `json:"-"`
+	SealedSecret []byte
+	key          [32]byte `json:"-"`
+}
 
-	for i := range s.MailboxPassword {
-		s.MailboxPassword[i] = 0
+func (s *Credentials) logout() {
+	s.Secret.APIToken = ""
+
+	for i := range s.Secret.MailboxPassword {
+		s.Secret.MailboxPassword[i] = 0
 	}
 
-	s.MailboxPassword = []byte{}
+	s.Secret.MailboxPassword = []byte{}
 }
 
 func (s *Credentials) IsConnected() bool {
-	return s.APIToken != "" && len(s.MailboxPassword) != 0
+	return s.Secret.APIToken != "" && len(s.Secret.MailboxPassword) != 0
 }
 
 func (s *Credentials) SplitAPIToken() (string, string, error) {
-	split := strings.Split(s.APIToken, ":")
+	split := strings.Split(s.Secret.APIToken, ":")
 
 	if len(split) != 2 {
 		return "", "", errors.New("malformed API token")
@@ -61,9 +72,61 @@ func (s *Credentials) SplitAPIToken() (string, string, error) {
 }
 
 func (s *Credentials) CheckPassword(password string) error {
-	if subtle.ConstantTimeCompare([]byte(s.BridgePassword), []byte(password)) != 1 {
+	if subtle.ConstantTimeCompare([]byte(s.Secret.BridgePassword), []byte(password)) != 1 {
 		return fmt.Errorf("backend/credentials: incorrect password")
 	}
 	return nil
+}
 
+func (s *Credentials) encrypt() error {
+	if s.locked() {
+		return ErrEncryptionFailed
+	}
+
+	secret, err := json.Marshal(s.Secret)
+	if err != nil {
+		return ErrEncryptionFailed
+	}
+
+	// Nonce must be different for each message
+	var nonce [24]byte
+	if _, err := io.ReadFull(rand.Reader, nonce[:]); err != nil {
+		return err
+	}
+
+	// Encrypt the secret and append the result to the nonce
+	s.SealedSecret = secretbox.Seal(nonce[:], []byte(secret), &nonce, &s.key)
+
+	return nil
+}
+
+func (s *Credentials) decrypt() error {
+	if len(s.SealedSecret) < 24 || s.locked() {
+		return ErrDecryptionFailed
+	}
+
+	// Read the nonce
+	var nonce [24]byte
+	copy(nonce[:], s.SealedSecret[:24])
+
+	// Decrypt
+	decrypted, ok := secretbox.Open(nil, s.SealedSecret[24:], &nonce, &s.key)
+	if !ok {
+		return ErrDecryptionFailed
+	}
+
+	if err := json.Unmarshal(decrypted, &s.Secret); err != nil {
+		return ErrDecryptionFailed
+	}
+
+	return nil
+}
+
+func (s *Credentials) locked() bool {
+	for _, v := range s.key {
+		if v != 0 {
+			return false
+		}
+	}
+	return true
 }
