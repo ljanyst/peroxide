@@ -230,18 +230,18 @@ func (m *MockStoreMaker) EXPECT() *MockStoreMakerMockRecorder {
 }
 
 // New mocks base method.
-func (m *MockStoreMaker) New(arg0 store.BridgeUser) (*store.Store, error) {
+func (m *MockStoreMaker) New(arg0 store.BridgeUser, arg1 bool) (*store.Store, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "New", arg0)
+	ret := m.ctrl.Call(m, "New", arg0, arg1)
 	ret0, _ := ret[0].(*store.Store)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // New indicates an expected call of New.
-func (mr *MockStoreMakerMockRecorder) New(arg0 interface{}) *gomock.Call {
+func (mr *MockStoreMakerMockRecorder) New(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "New", reflect.TypeOf((*MockStoreMaker)(nil).New), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "New", reflect.TypeOf((*MockStoreMaker)(nil).New), arg0, arg1)
 }
 
 // Remove mocks base method.

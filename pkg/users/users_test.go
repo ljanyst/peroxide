@@ -188,7 +188,7 @@ func initMocks(t *testing.T) mocks {
 	}
 
 	// Set up store factory.
-	m.storeMaker.EXPECT().New(gomock.Any()).DoAndReturn(func(user store.BridgeUser) (*store.Store, error) {
+	m.storeMaker.EXPECT().New(gomock.Any(), gomock.Any()).DoAndReturn(func(user store.BridgeUser, connected bool) (*store.Store, error) {
 		dbFile, err := ioutil.TempFile(t.TempDir(), "bridge-store-db-*.db")
 		r.NoError(t, err, "could not get temporary file for store db")
 		r.NoError(t, dbFile.Close())
@@ -200,6 +200,7 @@ func initMocks(t *testing.T) mocks {
 			message.NewBuilder(runtime.NumCPU(), runtime.NumCPU()),
 			dbFile.Name(),
 			m.storeCache,
+			connected,
 		)
 	}).AnyTimes()
 	m.storeMaker.EXPECT().Remove(gomock.Any()).AnyTimes()
@@ -232,6 +233,9 @@ func testNewUsersWithUsers(t *testing.T, m mocks) *Users {
 
 func testNewUsers(t *testing.T, m mocks) *Users { //nolint[unparam]
 	users := New(m.eventListener, m.clientManager, m.credentialsStore, m.storeMaker)
+	for _, user := range users.users {
+		user.BringOnline("foo", "bar")
+	}
 
 	waitForEvents()
 

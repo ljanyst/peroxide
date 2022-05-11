@@ -34,7 +34,7 @@ func TestNewUserNoCredentialsStore(t *testing.T) {
 
 	m.credentialsStore.EXPECT().Get("user").Return(nil, errors.New("fail"))
 
-	_, _, err := newUser("user", m.eventListener, m.credentialsStore, m.storeMaker)
+	_, err := newUser("user", m.eventListener, m.credentialsStore, m.storeMaker, m.clientManager)
 	r.Error(t, err)
 }
 
@@ -70,11 +70,11 @@ func TestNewUser(t *testing.T) {
 }
 
 func checkNewUserHasCredentials(m mocks, wantErr string, wantCreds *credentials.Credentials) {
-	user, _, err := newUser("user", m.eventListener, m.credentialsStore, m.storeMaker)
+	user, err := newUser("user", m.eventListener, m.credentialsStore, m.storeMaker, m.clientManager)
 	r.NoError(m.t, err)
 	defer cleanUpUserData(user)
 
-	err = user.connect(m.pmapiClient, testCredentials)
+	err = user.connect(m.pmapiClient)
 	if wantErr == "" {
 		r.NoError(m.t, err)
 	} else {

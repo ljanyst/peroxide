@@ -216,6 +216,7 @@ func (mocks *mocksForStore) newStoreNoEvents(t *testing.T, combinedMode bool, ms
 		message.NewBuilder(runtime.NumCPU(), runtime.NumCPU()),
 		filepath.Join(mocks.tmpDir, "mailbox-test.db"),
 		mocks.cache,
+		mocks.user.IsConnected(),
 	)
 	require.NoError(mocks.tb, err)
 
