@@ -47,7 +47,7 @@ func TestNewUserUnlockFails(t *testing.T) {
 		m.credentialsStore.EXPECT().Get("user").Return(testCredentials, nil),
 		m.pmapiClient.EXPECT().AddAuthRefreshHandler(gomock.Any()),
 		m.pmapiClient.EXPECT().IsUnlocked().Return(false),
-		m.pmapiClient.EXPECT().Unlock(gomock.Any(), testCredentials.MailboxPassword).Return(pmapi.ErrUnlockFailed{OriginalError: errors.New("bad password")}),
+		m.pmapiClient.EXPECT().Unlock(gomock.Any(), testCredentials.Secret.MailboxPassword).Return(pmapi.ErrUnlockFailed{OriginalError: errors.New("bad password")}),
 
 		// Handle of unlock error.
 		m.pmapiClient.EXPECT().AuthDelete(gomock.Any()).Return(nil),

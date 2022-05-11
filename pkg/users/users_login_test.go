@@ -35,9 +35,9 @@ func TestUsersFinishLoginBadMailboxPassword(t *testing.T) {
 
 	// Set up mocks for FinishLogin.
 	m.pmapiClient.EXPECT().AuthSalt(gomock.Any()).Return("", nil)
-	m.pmapiClient.EXPECT().Unlock(gomock.Any(), testCredentials.MailboxPassword).Return(errors.New("no keys could be unlocked"))
+	m.pmapiClient.EXPECT().Unlock(gomock.Any(), testCredentials.Secret.MailboxPassword).Return(errors.New("no keys could be unlocked"))
 
-	checkUsersFinishLogin(t, m, testAuthRefresh, testCredentials.MailboxPassword, "", ErrWrongMailboxPassword)
+	checkUsersFinishLogin(t, m, testAuthRefresh, testCredentials.Secret.MailboxPassword, "", ErrWrongMailboxPassword)
 }
 
 func TestUsersFinishLoginNewUser(t *testing.T) {
@@ -50,7 +50,7 @@ func TestUsersFinishLoginNewUser(t *testing.T) {
 	mockAddingConnectedUser(t, m)
 	mockEventLoopNoAction(m)
 
-	checkUsersFinishLogin(t, m, testAuthRefresh, testCredentials.MailboxPassword, testCredentials.UserID, nil)
+	checkUsersFinishLogin(t, m, testAuthRefresh, testCredentials.Secret.MailboxPassword, testCredentials.UserID, nil)
 }
 
 func TestUsersFinishLoginExistingDisconnectedUser(t *testing.T) {
@@ -64,10 +64,10 @@ func TestUsersFinishLoginExistingDisconnectedUser(t *testing.T) {
 	// Mock process of FinishLogin of already added user.
 	gomock.InOrder(
 		m.pmapiClient.EXPECT().AuthSalt(gomock.Any()).Return("", nil),
-		m.pmapiClient.EXPECT().Unlock(gomock.Any(), testCredentials.MailboxPassword).Return(nil),
+		m.pmapiClient.EXPECT().Unlock(gomock.Any(), testCredentials.Secret.MailboxPassword).Return(nil),
 		m.pmapiClient.EXPECT().CurrentUser(gomock.Any()).Return(testPMAPIUserDisconnected, nil),
 		m.credentialsStore.EXPECT().UpdateToken(testCredentialsDisconnected.UserID, testAuthRefresh.UID, testAuthRefresh.RefreshToken).Return(testCredentials, nil),
-		m.credentialsStore.EXPECT().UpdatePassword(testCredentialsDisconnected.UserID, testCredentials.MailboxPassword).Return(testCredentials, nil),
+		m.credentialsStore.EXPECT().UpdatePassword(testCredentialsDisconnected.UserID, testCredentials.Secret.MailboxPassword).Return(testCredentials, nil),
 	)
 	mockInitConnectedUser(t, m)
 	mockEventLoopNoAction(m)
@@ -80,7 +80,7 @@ func TestUsersFinishLoginExistingDisconnectedUser(t *testing.T) {
 			RefreshToken: "ref",
 		},
 	}
-	checkUsersFinishLogin(t, m, authRefresh, testCredentials.MailboxPassword, testCredentialsDisconnected.UserID, nil)
+	checkUsersFinishLogin(t, m, authRefresh, testCredentials.Secret.MailboxPassword, testCredentialsDisconnected.UserID, nil)
 }
 
 func TestUsersFinishLoginConnectedUser(t *testing.T) {
@@ -95,7 +95,7 @@ func TestUsersFinishLoginConnectedUser(t *testing.T) {
 	// Mock process of FinishLogin of already connected user.
 	gomock.InOrder(
 		m.pmapiClient.EXPECT().AuthSalt(gomock.Any()).Return("", nil),
-		m.pmapiClient.EXPECT().Unlock(gomock.Any(), testCredentials.MailboxPassword).Return(nil),
+		m.pmapiClient.EXPECT().Unlock(gomock.Any(), testCredentials.Secret.MailboxPassword).Return(nil),
 		m.pmapiClient.EXPECT().CurrentUser(gomock.Any()).Return(testPMAPIUser, nil),
 		m.pmapiClient.EXPECT().AuthDelete(gomock.Any()).Return(nil),
 	)
@@ -103,7 +103,7 @@ func TestUsersFinishLoginConnectedUser(t *testing.T) {
 	users := testNewUsers(t, m)
 	defer cleanUpUsersData(users)
 
-	_, err := users.FinishLogin(m.pmapiClient, testAuthRefresh, testCredentials.MailboxPassword)
+	_, err := users.FinishLogin(m.pmapiClient, testAuthRefresh, testCredentials.Secret.MailboxPassword)
 	r.EqualError(t, err, "user is already connected")
 }
 

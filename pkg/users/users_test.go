@@ -62,39 +62,47 @@ var (
 	}
 
 	testCredentials = &credentials.Credentials{ //nolint[gochecknoglobals]
-		UserID:          "user",
-		Name:            "username",
-		Emails:          []string{"user@pm.me"},
-		APIToken:        "uid:acc",
-		MailboxPassword: []byte("pass"),
-		BridgePassword:  "0123456789abcdef",
+		UserID: "user",
+		Name:   "username",
+		Emails: []string{"user@pm.me"},
+		Secret: credentials.Secret{
+			APIToken:        "uid:acc",
+			MailboxPassword: []byte("pass"),
+			BridgePassword:  "0123456789abcdef",
+		},
 	}
 
 	testCredentialsSplit = &credentials.Credentials{ //nolint[gochecknoglobals]
-		UserID:          "users",
-		Name:            "usersname",
-		Emails:          []string{"users@pm.me", "anotheruser@pm.me", "alsouser@pm.me"},
-		APIToken:        "uid:acc",
-		MailboxPassword: []byte("pass"),
-		BridgePassword:  "0123456789abcdef",
+		UserID: "users",
+		Name:   "usersname",
+		Emails: []string{"users@pm.me", "anotheruser@pm.me", "alsouser@pm.me"},
+		Secret: credentials.Secret{
+			APIToken:        "uid:acc",
+			MailboxPassword: []byte("pass"),
+			BridgePassword:  "0123456789abcdef",
+		},
 	}
 
 	testCredentialsDisconnected = &credentials.Credentials{ //nolint[gochecknoglobals]
-		UserID:          "userDisconnected",
-		Name:            "username",
-		Emails:          []string{"user@pm.me"},
-		APIToken:        "",
-		MailboxPassword: []byte{},
-		BridgePassword:  "0123456789abcdef",
+		UserID: "userDisconnected",
+		Name:   "username",
+		Emails: []string{"user@pm.me"},
+		Secret: credentials.Secret{
+			APIToken:        "",
+			MailboxPassword: []byte{},
+			BridgePassword:  "0123456789abcdef",
+		},
 	}
 
 	testCredentialsSplitDisconnected = &credentials.Credentials{ //nolint[gochecknoglobals]
-		UserID:          "usersDisconnected",
-		Name:            "usersname",
-		Emails:          []string{"users@pm.me", "anotheruser@pm.me", "alsouser@pm.me"},
-		APIToken:        "",
-		MailboxPassword: []byte{},
-		BridgePassword:  "0123456789abcdef",
+		UserID: "usersDisconnected",
+		Name:   "usersname",
+		Emails: []string{"users@pm.me", "anotheruser@pm.me", "alsouser@pm.me"},
+		Secret: credentials.Secret{
+			APIToken:        "",
+			MailboxPassword: []byte{},
+			BridgePassword:  "0123456789abcdef",
+		},
 	}
 
 	usedSpace = int64(1048576)
@@ -244,10 +252,10 @@ func mockAddingConnectedUser(t *testing.T, m mocks) {
 	gomock.InOrder(
 		// Mock of users.FinishLogin.
 		m.pmapiClient.EXPECT().AuthSalt(gomock.Any()).Return("", nil),
-		m.pmapiClient.EXPECT().Unlock(gomock.Any(), testCredentials.MailboxPassword).Return(nil),
+		m.pmapiClient.EXPECT().Unlock(gomock.Any(), testCredentials.Secret.MailboxPassword).Return(nil),
 		m.pmapiClient.EXPECT().CurrentUser(gomock.Any()).Return(testPMAPIUser, nil),
 		m.pmapiClient.EXPECT().Addresses().Return([]*pmapi.Address{testPMAPIAddress}),
-		m.credentialsStore.EXPECT().Add("user", "username", testAuthRefresh.UID, testAuthRefresh.RefreshToken, testCredentials.MailboxPassword, []string{testPMAPIAddress.Email}).Return(testCredentials, nil),
+		m.credentialsStore.EXPECT().Add("user", "username", testAuthRefresh.UID, testAuthRefresh.RefreshToken, testCredentials.Secret.MailboxPassword, []string{testPMAPIAddress.Email}).Return(testCredentials, nil),
 		m.credentialsStore.EXPECT().Get("user").Return(testCredentials, nil),
 	)
 

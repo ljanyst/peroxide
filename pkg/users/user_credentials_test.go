@@ -37,7 +37,7 @@ func TestUpdateUser(t *testing.T) {
 
 	gomock.InOrder(
 		m.pmapiClient.EXPECT().UpdateUser(gomock.Any()).Return(testPMAPIUser, nil),
-		m.pmapiClient.EXPECT().ReloadKeys(gomock.Any(), testCredentials.MailboxPassword).Return(nil),
+		m.pmapiClient.EXPECT().ReloadKeys(gomock.Any(), testCredentials.Secret.MailboxPassword).Return(nil),
 		m.pmapiClient.EXPECT().Addresses().Return([]*pmapi.Address{testPMAPIAddress}),
 
 		m.credentialsStore.EXPECT().UpdateEmails("user", []string{testPMAPIAddress.Email}).Return(testCredentials, nil),
@@ -88,7 +88,7 @@ func TestCheckBridgeLogin(t *testing.T) {
 	user := testNewUser(t, m)
 	defer cleanUpUserData(user)
 
-	err := user.CheckBridgeLogin(testCredentials.BridgePassword)
+	err := user.CheckBridgeLogin(testCredentials.Secret.BridgePassword)
 	r.NoError(t, err)
 }
 
@@ -111,7 +111,7 @@ func TestCheckBridgeLoginLoggedOut(t *testing.T) {
 	r.Error(t, err)
 	defer cleanUpUserData(user)
 
-	err = user.CheckBridgeLogin(testCredentialsDisconnected.BridgePassword)
+	err = user.CheckBridgeLogin(testCredentialsDisconnected.Secret.BridgePassword)
 	r.Equal(t, ErrLoggedOutUser, err)
 }
 
