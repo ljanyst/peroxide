@@ -130,20 +130,6 @@ func (mr *MockBridgeUserMockRecorder) ID() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockBridgeUser)(nil).ID))
 }
 
-// IsCombinedAddressMode mocks base method.
-func (m *MockBridgeUser) IsCombinedAddressMode() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsCombinedAddressMode")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsCombinedAddressMode indicates an expected call of IsCombinedAddressMode.
-func (mr *MockBridgeUserMockRecorder) IsCombinedAddressMode() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsCombinedAddressMode", reflect.TypeOf((*MockBridgeUser)(nil).IsCombinedAddressMode))
-}
-
 // IsConnected mocks base method.
 func (m *MockBridgeUser) IsConnected() bool {
 	m.ctrl.T.Helper()

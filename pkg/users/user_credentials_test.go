@@ -46,54 +46,6 @@ func TestUpdateUser(t *testing.T) {
 	r.NoError(t, user.UpdateUser(context.Background()))
 }
 
-func TestUserSwitchAddressMode(t *testing.T) {
-	m := initMocks(t)
-	defer m.ctrl.Finish()
-
-	user := testNewUser(t, m)
-	defer cleanUpUserData(user)
-
-	// Ignore any sync on background.
-	m.pmapiClient.EXPECT().ListMessages(gomock.Any(), gomock.Any()).Return([]*pmapi.Message{}, 0, nil).AnyTimes()
-
-	// Check initial state.
-	r.True(t, user.store.IsCombinedMode())
-	r.True(t, user.creds.IsCombinedAddressMode)
-	r.True(t, user.IsCombinedAddressMode())
-
-	// Mock change to split mode.
-	gomock.InOrder(
-		m.eventListener.EXPECT().Emit(events.CloseConnectionEvent, "user@pm.me"),
-		m.pmapiClient.EXPECT().ListLabels(gomock.Any()).Return([]*pmapi.Label{}, nil),
-		m.pmapiClient.EXPECT().CountMessages(gomock.Any(), "").Return([]*pmapi.MessagesCount{}, nil),
-		m.pmapiClient.EXPECT().Addresses().Return([]*pmapi.Address{testPMAPIAddress}),
-		m.credentialsStore.EXPECT().SwitchAddressMode("user").Return(testCredentialsSplit, nil),
-	)
-
-	// Check switch to split mode.
-	r.NoError(t, user.SwitchAddressMode())
-	r.False(t, user.store.IsCombinedMode())
-	r.False(t, user.creds.IsCombinedAddressMode)
-	r.False(t, user.IsCombinedAddressMode())
-
-	// Mock change to combined mode.
-	gomock.InOrder(
-		m.eventListener.EXPECT().Emit(events.CloseConnectionEvent, "users@pm.me"),
-		m.eventListener.EXPECT().Emit(events.CloseConnectionEvent, "anotheruser@pm.me"),
-		m.eventListener.EXPECT().Emit(events.CloseConnectionEvent, "alsouser@pm.me"),
-		m.pmapiClient.EXPECT().ListLabels(gomock.Any()).Return([]*pmapi.Label{}, nil),
-		m.pmapiClient.EXPECT().CountMessages(gomock.Any(), "").Return([]*pmapi.MessagesCount{}, nil),
-		m.pmapiClient.EXPECT().Addresses().Return([]*pmapi.Address{testPMAPIAddress}),
-		m.credentialsStore.EXPECT().SwitchAddressMode("user").Return(testCredentials, nil),
-	)
-
-	// Check switch to combined mode.
-	r.NoError(t, user.SwitchAddressMode())
-	r.True(t, user.store.IsCombinedMode())
-	r.True(t, user.creds.IsCombinedAddressMode)
-	r.True(t, user.IsCombinedAddressMode())
-}
-
 func TestLogoutUser(t *testing.T) {
 	m := initMocks(t)
 	defer m.ctrl.Finish()

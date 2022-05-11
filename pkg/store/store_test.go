@@ -178,7 +178,6 @@ func initMocks(tb testing.TB) (*mocksForStore, func()) {
 func (mocks *mocksForStore) newStoreNoEvents(t *testing.T, combinedMode bool, msgs ...*pmapi.Message) { //nolint[unparam]
 	mocks.user.EXPECT().ID().Return("userID").AnyTimes()
 	mocks.user.EXPECT().IsConnected().Return(true)
-	mocks.user.EXPECT().IsCombinedAddressMode().Return(combinedMode)
 
 	mocks.user.EXPECT().GetClient().AnyTimes().Return(mocks.client)
 

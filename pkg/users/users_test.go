@@ -62,55 +62,39 @@ var (
 	}
 
 	testCredentials = &credentials.Credentials{ //nolint[gochecknoglobals]
-		UserID:                "user",
-		Name:                  "username",
-		Emails:                "user@pm.me",
-		APIToken:              "uid:acc",
-		MailboxPassword:       []byte("pass"),
-		BridgePassword:        "0123456789abcdef",
-		Version:               "v1",
-		Timestamp:             123456789,
-		IsHidden:              false,
-		IsCombinedAddressMode: true,
+		UserID:          "user",
+		Name:            "username",
+		Emails:          []string{"user@pm.me"},
+		APIToken:        "uid:acc",
+		MailboxPassword: []byte("pass"),
+		BridgePassword:  "0123456789abcdef",
 	}
 
 	testCredentialsSplit = &credentials.Credentials{ //nolint[gochecknoglobals]
-		UserID:                "users",
-		Name:                  "usersname",
-		Emails:                "users@pm.me;anotheruser@pm.me;alsouser@pm.me",
-		APIToken:              "uid:acc",
-		MailboxPassword:       []byte("pass"),
-		BridgePassword:        "0123456789abcdef",
-		Version:               "v1",
-		Timestamp:             123456789,
-		IsHidden:              false,
-		IsCombinedAddressMode: false,
+		UserID:          "users",
+		Name:            "usersname",
+		Emails:          []string{"users@pm.me", "anotheruser@pm.me", "alsouser@pm.me"},
+		APIToken:        "uid:acc",
+		MailboxPassword: []byte("pass"),
+		BridgePassword:  "0123456789abcdef",
 	}
 
 	testCredentialsDisconnected = &credentials.Credentials{ //nolint[gochecknoglobals]
-		UserID:                "userDisconnected",
-		Name:                  "username",
-		Emails:                "user@pm.me",
-		APIToken:              "",
-		MailboxPassword:       []byte{},
-		BridgePassword:        "0123456789abcdef",
-		Version:               "v1",
-		Timestamp:             123456789,
-		IsHidden:              false,
-		IsCombinedAddressMode: true,
+		UserID:          "userDisconnected",
+		Name:            "username",
+		Emails:          []string{"user@pm.me"},
+		APIToken:        "",
+		MailboxPassword: []byte{},
+		BridgePassword:  "0123456789abcdef",
 	}
 
 	testCredentialsSplitDisconnected = &credentials.Credentials{ //nolint[gochecknoglobals]
-		UserID:                "usersDisconnected",
-		Name:                  "usersname",
-		Emails:                "users@pm.me;anotheruser@pm.me;alsouser@pm.me",
-		APIToken:              "",
-		MailboxPassword:       []byte{},
-		BridgePassword:        "0123456789abcdef",
-		Version:               "v1",
-		Timestamp:             123456789,
-		IsHidden:              false,
-		IsCombinedAddressMode: false,
+		UserID:          "usersDisconnected",
+		Name:            "usersname",
+		Emails:          []string{"users@pm.me", "anotheruser@pm.me", "alsouser@pm.me"},
+		APIToken:        "",
+		MailboxPassword: []byte{},
+		BridgePassword:  "0123456789abcdef",
 	}
 
 	usedSpace = int64(1048576)
@@ -150,7 +134,6 @@ type mocks struct {
 	t *testing.T
 
 	ctrl             *gomock.Controller
-	locator          *usersmocks.MockLocator
 	credentialsStore *usersmocks.MockCredentialsStorer
 	storeMaker       *usersmocks.MockStoreMaker
 	eventListener    *usersmocks.MockListener
