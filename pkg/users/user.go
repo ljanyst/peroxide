@@ -344,27 +344,34 @@ func (u *User) GetAddressID(address string) (id string, err error) {
 	return "", errors.New("address not found")
 }
 
-// GetBridgePassword returns bridge password. This is not a password of the PM
-// account, but generated password for local purposes to not use a PM account
-// in the clients (such as Thunderbird).
-func (u *User) GetBridgePassword() string {
-	u.lock.RLock()
-	defer u.lock.RUnlock()
+func (u *User) CheckCredentials(slot, password string) error {
+	u.lock.Lock()
+	defer u.lock.Unlock()
 
-	return u.creds.Secret.BridgePassword
-}
-
-// CheckBridgeLogin checks whether the user is logged in and the bridge
-// IMAP/SMTP password is correct.
-func (u *User) CheckBridgeLogin(password string) error {
-	u.lock.RLock()
-	defer u.lock.RUnlock()
+	verified := false
+	if u.creds.Locked() {
+		if err := u.creds.Unlock(slot, password); err != nil {
+			return err
+		}
+		verified = true
+	}
 
 	if !u.creds.IsConnected() {
 		return ErrLoggedOutUser
 	}
 
-	return u.creds.CheckPassword(password)
+	if verified {
+		return nil
+	}
+
+	return u.creds.Unlock(slot, password)
+}
+
+func (u *User) UnlockCredentials(slot, password string) error {
+	u.lock.Lock()
+	defer u.lock.Unlock()
+
+	return u.creds.Unlock(slot, password)
 }
 
 func (u *User) BringOnline(username, password string) error {
@@ -373,6 +380,12 @@ func (u *User) BringOnline(username, password string) error {
 
 	if u.client != nil {
 		return nil
+	}
+
+	if u.creds.Locked() {
+		if err := u.creds.Unlock("main", password); err != nil {
+			return err
+		}
 	}
 
 	if !u.creds.IsConnected() {

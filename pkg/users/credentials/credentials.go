@@ -22,10 +22,9 @@ package credentials
 
 import (
 	"crypto/rand"
-	"crypto/subtle"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"strings"
 
@@ -35,7 +34,6 @@ import (
 type Secret struct {
 	APIToken        string
 	MailboxPassword []byte
-	BridgePassword  string
 }
 
 type Credentials struct {
@@ -44,7 +42,8 @@ type Credentials struct {
 	Emails       []string
 	Secret       Secret `json:"-"`
 	SealedSecret []byte
-	key          [32]byte `json:"-"`
+	SealedKeys   map[string][]byte
+	Key          [32]byte `json:"-"`
 }
 
 func (s *Credentials) logout() {
@@ -71,15 +70,62 @@ func (s *Credentials) SplitAPIToken() (string, string, error) {
 	return split[0], split[1], nil
 }
 
-func (s *Credentials) CheckPassword(password string) error {
-	if subtle.ConstantTimeCompare([]byte(s.Secret.BridgePassword), []byte(password)) != 1 {
-		return fmt.Errorf("backend/credentials: incorrect password")
+func (s *Credentials) Unlock(slot, password string) error {
+	sealedKey, ok := s.SealedKeys[slot]
+	if !ok {
+		return ErrUnauthorized
 	}
+
+	pb, err := base64.StdEncoding.DecodeString(password)
+	if err != nil {
+		return ErrUnauthorized
+	}
+
+	if len(pb) != len(s.Key) {
+		return ErrUnauthorized
+	}
+
+	var passBytes [32]byte
+	copy(passBytes[:], pb)
+
+	if len(sealedKey) < 24 {
+		return ErrUnauthorized
+	}
+
+	// Read the nonce
+	var nonce [24]byte
+	copy(nonce[:], sealedKey[:24])
+
+	// Decrypt
+	keyBytes, ok := secretbox.Open(nil, sealedKey[24:], &nonce, &passBytes)
+	if !ok {
+		return ErrUnauthorized
+	}
+
+	if s.Locked() {
+		copy(s.Key[:], keyBytes)
+		return s.Decrypt()
+	}
+
 	return nil
 }
 
-func (s *Credentials) encrypt() error {
-	if s.locked() {
+func (s *Credentials) SealKey(slot string, key [32]byte) error {
+	if s.Locked() {
+		return ErrLocked
+	}
+
+	var nonce [24]byte
+	if _, err := io.ReadFull(rand.Reader, nonce[:]); err != nil {
+		return err
+	}
+
+	s.SealedKeys[slot] = secretbox.Seal(nonce[:], s.Key[:], &nonce, &key)
+	return nil
+}
+
+func (s *Credentials) Encrypt() error {
+	if s.Locked() {
 		return ErrEncryptionFailed
 	}
 
@@ -95,13 +141,13 @@ func (s *Credentials) encrypt() error {
 	}
 
 	// Encrypt the secret and append the result to the nonce
-	s.SealedSecret = secretbox.Seal(nonce[:], []byte(secret), &nonce, &s.key)
+	s.SealedSecret = secretbox.Seal(nonce[:], []byte(secret), &nonce, &s.Key)
 
 	return nil
 }
 
-func (s *Credentials) decrypt() error {
-	if len(s.SealedSecret) < 24 || s.locked() {
+func (s *Credentials) Decrypt() error {
+	if len(s.SealedSecret) < 24 || s.Locked() {
 		return ErrDecryptionFailed
 	}
 
@@ -110,7 +156,7 @@ func (s *Credentials) decrypt() error {
 	copy(nonce[:], s.SealedSecret[:24])
 
 	// Decrypt
-	decrypted, ok := secretbox.Open(nil, s.SealedSecret[24:], &nonce, &s.key)
+	decrypted, ok := secretbox.Open(nil, s.SealedSecret[24:], &nonce, &s.Key)
 	if !ok {
 		return ErrDecryptionFailed
 	}
@@ -122,8 +168,8 @@ func (s *Credentials) decrypt() error {
 	return nil
 }
 
-func (s *Credentials) locked() bool {
-	for _, v := range s.key {
+func (s *Credentials) Locked() bool {
+	for _, v := range s.Key {
 		if v != 0 {
 			return false
 		}

@@ -18,10 +18,8 @@
 package credentials
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"sort"
 	"sync"
@@ -34,8 +32,9 @@ var (
 	ErrLocked           = errors.New("Credentials are locked")
 	ErrDecryptionFailed = errors.New("Decryption of credentials failed")
 	ErrEncryptionFailed = errors.New("Encryption of credentials failed")
+	ErrUnauthorized     = errors.New("Bridge credentials checking failed")
+	ErrAlreadyExists    = errors.New("Credential already exists")
 	log                 = logrus.WithField("pkg", "credentials")
-	secretKey           [32]byte
 )
 
 // Store is an encrypted credentials store.
@@ -52,31 +51,14 @@ func NewStore(filePath string) (*Store, error) {
 		filePath: filePath,
 	}
 
-	key := os.Getenv("PEROXIDE_CREDENTIALS_KEY")
-	if key == "" {
-		return nil, fmt.Errorf("PEROXIDE_CREDENTIALS_KEY envvar not set")
-	}
-
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return nil, fmt.Errorf("Unable to decode the credentials key: %s", err)
-	}
-
-	if len(keyBytes) != len(secretKey) {
-		return nil, fmt.Errorf("Decoded credentials key is not %d bytes long", len(secretKey))
-	}
-
-	copy(secretKey[:], keyBytes)
-
-	err = s.loadCredentials()
-	if err != nil {
+	if err := s.loadCredentials(); err != nil {
 		return nil, err
 	}
 
 	return s, nil
 }
 
-func (s *Store) Add(userID, userName, uid, ref string, mailboxPassword []byte, emails []string) (*Credentials, error) {
+func (s *Store) Add(userID, userName, uid, ref string, mailboxPassword []byte, emails []string) (*Credentials, []byte, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -94,29 +76,34 @@ func (s *Store) Add(userID, userName, uid, ref string, mailboxPassword []byte, e
 			APIToken:        uid + ":" + ref,
 			MailboxPassword: mailboxPassword,
 		},
-		key: secretKey,
+		SealedKeys: make(map[string][]byte),
 	}
 
-	currentCredentials, ok := s.creds[userID]
+	_, ok := s.creds[userID]
 	if ok {
-		log.Info("Updating credentials of existing user")
-		creds.Secret.BridgePassword = currentCredentials.Secret.BridgePassword
-	} else {
-		log.Info("Generating credentials for new user")
-		creds.Secret.BridgePassword = generatePassword()
+		return nil, nil, ErrAlreadyExists
 	}
 
-	if err := creds.encrypt(); err != nil {
-		return nil, err
+	copy(creds.Key[:], GenerateKey(32))
+
+	var mainKey [32]byte
+	copy(mainKey[:], GenerateKey(32))
+	if err := creds.SealKey("main", mainKey); err != nil {
+		return nil, nil, err
+	}
+
+	if err := creds.Encrypt(); err != nil {
+		return nil, nil, err
 	}
 
 	s.creds[userID] = creds
 
 	if err := s.saveCredentials(); err != nil {
-		return nil, err
+		delete(s.creds, userID)
+		return nil, nil, err
 	}
 
-	return creds, nil
+	return creds, mainKey[:], nil
 }
 
 func (s *Store) UpdateEmails(userID string, emails []string) (*Credentials, error) {
@@ -142,12 +129,12 @@ func (s *Store) UpdatePassword(userID string, password []byte) (*Credentials, er
 		return nil, ErrNotFound
 	}
 
-	if credentials.locked() {
+	if credentials.Locked() {
 		return nil, ErrLocked
 	}
 
 	credentials.Secret.MailboxPassword = password
-	if err := credentials.encrypt(); err != nil {
+	if err := credentials.Encrypt(); err != nil {
 		return nil, err
 	}
 
@@ -163,12 +150,12 @@ func (s *Store) UpdateToken(userID, uid, ref string) (*Credentials, error) {
 		return nil, ErrNotFound
 	}
 
-	if credentials.locked() {
+	if credentials.Locked() {
 		return nil, ErrLocked
 	}
 
 	credentials.Secret.APIToken = uid + ":" + ref
-	if err := credentials.encrypt(); err != nil {
+	if err := credentials.Encrypt(); err != nil {
 		return nil, err
 	}
 
@@ -184,11 +171,11 @@ func (s *Store) Logout(userID string) (*Credentials, error) {
 		return nil, ErrNotFound
 	}
 
-	if credentials.locked() {
+	if credentials.Locked() {
 		return nil, ErrLocked
 	}
 
-	if err := credentials.encrypt(); err != nil {
+	if err := credentials.Encrypt(); err != nil {
 		return nil, err
 	}
 
@@ -261,11 +248,6 @@ func (s *Store) loadCredentials() error {
 
 	if err := json.NewDecoder(f).Decode(&s.creds); err != nil {
 		return err
-	}
-
-	for _, v := range s.creds {
-		v.key = secretKey
-		v.decrypt()
 	}
 
 	return nil

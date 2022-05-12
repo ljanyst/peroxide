@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with ProtonMail Bridge.  If not, see <https://www.gnu.org/licenses/>.
 
+//go:build !imaptest
 // +build !imaptest
 
 package credentials
@@ -25,11 +26,8 @@ import (
 	"io"
 )
 
-const keySize = 16
-
-// generateKey generates a new random key.
-func generateKey() []byte {
-	key := make([]byte, keySize)
+func GenerateKey(size uint) []byte {
+	key := make([]byte, size)
 	if _, err := io.ReadFull(rand.Reader, key); err != nil {
 		panic(err)
 	}
@@ -37,5 +35,5 @@ func generateKey() []byte {
 }
 
 func generatePassword() string {
-	return base64.RawURLEncoding.EncodeToString(generateKey())
+	return base64.RawURLEncoding.EncodeToString(GenerateKey(16))
 }

@@ -161,7 +161,7 @@ func (ib *imapBackend) Login(_ *imap.ConnInfo, username, password string) (goIMA
 		return nil, err
 	}
 
-	if err := imapUser.user.CheckBridgeLogin(password); err != nil {
+	if err := imapUser.user.CheckCredentials("main", password); err != nil {
 		log.WithError(err).Error("Could not check bridge password")
 		if err := imapUser.Logout(); err != nil {
 			log.WithError(err).Warn("Could not logout user after unsuccessful login check")

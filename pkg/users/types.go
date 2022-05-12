@@ -24,7 +24,7 @@ import (
 
 type CredentialsStorer interface {
 	List() (userIDs []string, err error)
-	Add(userID, userName, uid, ref string, mailboxPassword []byte, emails []string) (*credentials.Credentials, error)
+	Add(userID, userName, uid, ref string, mailboxPassword []byte, emails []string) (*credentials.Credentials, []byte, error)
 	Get(userID string) (*credentials.Credentials, error)
 	UpdateEmails(userID string, emails []string) (*credentials.Credentials, error)
 	UpdatePassword(userID string, password []byte) (*credentials.Credentials, error)

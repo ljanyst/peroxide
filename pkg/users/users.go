@@ -20,6 +20,7 @@ package users
 
 import (
 	"context"
+	"encoding/base64"
 	"strings"
 	"sync"
 
@@ -121,59 +122,73 @@ func (u *Users) Login(username string, password []byte) (authClient pmapi.Client
 }
 
 // FinishLogin finishes the login procedure and adds the user into the credentials store.
-func (u *Users) FinishLogin(client pmapi.Client, auth *pmapi.Auth, password []byte) (user *User, err error) { //nolint[funlen]
+// The main key is only required if we're updating an existing user and only returned if we're creating a new one
+func (u *Users) FinishLogin(client pmapi.Client, auth *pmapi.Auth, password []byte, mainKey string) (*User, string, error) { //nolint[funlen]
 	apiUser, passphrase, err := getAPIUser(context.Background(), client, password)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	if user, ok := u.hasUser(apiUser.ID); ok {
+		if err := user.UnlockCredentials("main", mainKey); err != nil {
+			return nil, "", err
+		}
+
 		if user.IsConnected() {
 			if err := client.AuthDelete(context.Background()); err != nil {
 				logrus.WithError(err).Warn("Failed to delete new auth session")
 			}
 
-			return user, ErrUserAlreadyConnected
+			return user, "", ErrUserAlreadyConnected
 		}
 
 		// Update the user's credentials with the latest auth used to connect this user.
 		if _, err := u.credStorer.UpdateToken(auth.UserID, auth.UID, auth.RefreshToken); err != nil {
-			return nil, errors.Wrap(err, "failed to load user credentials")
+			return nil, "", errors.Wrap(err, "failed to load user credentials")
 		}
 
 		// Update the password in case the user changed it.
 		_, err := u.credStorer.UpdatePassword(apiUser.ID, passphrase)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to update password of user in credentials store")
+			return nil, "", errors.Wrap(err, "failed to update password of user in credentials store")
 		}
 
-		return user, nil
+		return user, "", nil
 	}
 
-	if err := u.addNewUser(client, apiUser, auth, passphrase); err != nil {
-		return nil, errors.Wrap(err, "failed to add new user")
+	key, err := u.addNewUser(client, apiUser, auth, passphrase)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "failed to add new user")
 	}
 
-	return u.GetUser(apiUser.ID)
+	mainKey = base64.StdEncoding.EncodeToString(key)
+
+	user, err := u.GetUser(apiUser.ID)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return user, mainKey, nil
 }
 
 // addNewUser adds a new user.
-func (u *Users) addNewUser(client pmapi.Client, apiUser *pmapi.User, auth *pmapi.Auth, passphrase []byte) error {
+func (u *Users) addNewUser(client pmapi.Client, apiUser *pmapi.User, auth *pmapi.Auth, passphrase []byte) ([]byte, error) {
 	u.lock.Lock()
 	defer u.lock.Unlock()
 
-	if _, err := u.credStorer.Add(apiUser.ID, apiUser.Name, auth.UID, auth.RefreshToken, passphrase, client.Addresses().ActiveEmails()); err != nil {
-		return errors.Wrap(err, "failed to add user credentials to credentials store")
+	_, mainKey, err := u.credStorer.Add(apiUser.ID, apiUser.Name, auth.UID, auth.RefreshToken, passphrase, client.Addresses().ActiveEmails())
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to add user credentials to credentials store")
 	}
 
 	user, err := newUser(apiUser.ID, u.events, u.credStorer, u.storeFactory, u.clientManager)
 	if err != nil {
-		return errors.Wrap(err, "failed to create new user")
+		return nil, errors.Wrap(err, "failed to create new user")
 	}
 
 	u.users = append(u.users, user)
 
-	return nil
+	return mainKey, nil
 }
 
 func getAPIUser(ctx context.Context, client pmapi.Client, password []byte) (*pmapi.User, []byte, error) {

@@ -66,7 +66,7 @@ func (sb *smtpBackend) Login(_ *goSMTPBackend.ConnectionState, username, passwor
 		return nil, err
 	}
 
-	if err := user.CheckBridgeLogin(password); err != nil {
+	if err := user.CheckCredentials("main", password); err != nil {
 		log.WithError(err).Error("Could not check bridge password")
 		// Apple Mail sometimes generates a lot of requests very quickly. It's good practice
 		// to have a timeout after bad logins so that we can slow those requests down a little bit.
