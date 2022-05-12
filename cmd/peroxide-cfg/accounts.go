@@ -49,14 +49,14 @@ func askPass(prompt string) ([]byte, error) {
 }
 
 func listAccounts(b *bridge.Bridge) {
-	spacing := "%3d: %-20s %-20s %-20s %-15s "
+	spacing := "%3d: %-20s %-20s %-15s "
 	for idx, user := range b.Users.GetUsers() {
 		connected := "disconnected"
 		if user.IsConnected() {
 			connected = "connected"
 		}
 
-		fmt.Printf(spacing, idx, user.Username(), user.GetBridgePassword(), user.GetPrimaryAddress(), connected)
+		fmt.Printf(spacing, idx, user.Username(), user.GetPrimaryAddress(), connected)
 
 		for _, address := range user.GetAddresses() {
 			fmt.Printf("%-20s", address)
@@ -100,9 +100,25 @@ func deleteAccount(b *bridge.Bridge, accountName string) error {
 	return nil
 }
 
-func addAccount(b *bridge.Bridge, accountName string) error {
+func loginAccount(b *bridge.Bridge, accountName string) error {
 	if accountName == "" {
 		return fmt.Errorf("Missing account name")
+	}
+
+	user, _ := b.Users.GetUser(accountName)
+	if user != nil {
+		mainKey, err := askPass("Main key")
+		if err != nil {
+			return fmt.Errorf("The main key is required to modify an existing user: %s", err)
+		}
+
+		if err := user.UnlockCredentials("main", string(mainKey)); err != nil {
+			return fmt.Errorf("Unable to unlock credentials: %s", err)
+		}
+
+		if err := user.Logout(); err != nil {
+			return fmt.Errorf("Unable to logout previous session: %s", err)
+		}
 	}
 
 	password, err := askPass("Password")
@@ -148,12 +164,15 @@ func addAccount(b *bridge.Bridge, accountName string) error {
 		return fmt.Errorf("Empty mailbox password")
 	}
 
-	user, err := b.Users.FinishLogin(client, auth, mailboxPassword)
+	user, key, err := b.Users.FinishLogin(client, auth, mailboxPassword, "")
 	if err != nil {
 		return fmt.Errorf("Login of account %s failed: %s", accountName, err)
 	}
 
 	fmt.Printf("Account %s has been added successfully.\n", user.Username())
+	if len(key) != 0 {
+		fmt.Printf("Main key: %s\n", key)
+	}
 
 	return nil
 }

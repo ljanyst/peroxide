@@ -40,7 +40,7 @@ var x509KeyFile = flag.String("x509-key", "key.pem", "output file for the RSA ke
 var x509CertFile = flag.String("x509-cert", "cert.pem", "output file for the X509 certificate")
 var list = flag.Bool("list-accounts", false, "list user accounts")
 var delete = flag.Bool("delete-account", false, "delete user account")
-var add = flag.Bool("add-account", false, "add user account")
+var login = flag.Bool("login-account", false, "log in user account")
 var name = flag.String("name", "", "account name")
 var logLevel = flag.String("log-level", "Warning", "account name")
 
@@ -79,8 +79,8 @@ func main() {
 		} else if *delete {
 			err = deleteAccount(b, *name)
 			done = true
-		} else if *add {
-			err = addAccount(b, *name)
+		} else if *login {
+			err = loginAccount(b, *name)
 			done = true
 		}
 
