@@ -37,7 +37,7 @@ func TestUsersFinishLoginBadMailboxPassword(t *testing.T) {
 	m.pmapiClient.EXPECT().AuthSalt(gomock.Any()).Return("", nil)
 	m.pmapiClient.EXPECT().Unlock(gomock.Any(), testCredentials.Secret.MailboxPassword).Return(errors.New("no keys could be unlocked"))
 
-	checkUsersFinishLogin(t, m, testAuthRefresh, testCredentials.Secret.MailboxPassword, "", ErrWrongMailboxPassword)
+	checkUsersFinishLogin(t, m, testAuthRefresh, testCredentials.Secret.MailboxPassword, "", ErrWrongMailboxPassword, false)
 }
 
 func TestUsersFinishLoginNewUser(t *testing.T) {
@@ -50,7 +50,7 @@ func TestUsersFinishLoginNewUser(t *testing.T) {
 	mockAddingConnectedUser(t, m)
 	mockEventLoopNoAction(m)
 
-	checkUsersFinishLogin(t, m, testAuthRefresh, testCredentials.Secret.MailboxPassword, testCredentials.UserID, nil)
+	checkUsersFinishLogin(t, m, testAuthRefresh, testCredentials.Secret.MailboxPassword, testCredentials.UserID, nil, true)
 }
 
 func TestUsersFinishLoginExistingDisconnectedUser(t *testing.T) {
@@ -80,7 +80,7 @@ func TestUsersFinishLoginExistingDisconnectedUser(t *testing.T) {
 			RefreshToken: "ref",
 		},
 	}
-	checkUsersFinishLogin(t, m, authRefresh, testCredentials.Secret.MailboxPassword, testCredentialsDisconnected.UserID, nil)
+	checkUsersFinishLogin(t, m, authRefresh, testCredentials.Secret.MailboxPassword, testCredentialsDisconnected.UserID, nil, false)
 }
 
 func TestUsersFinishLoginConnectedUser(t *testing.T) {
@@ -103,20 +103,25 @@ func TestUsersFinishLoginConnectedUser(t *testing.T) {
 	users := testNewUsers(t, m)
 	defer cleanUpUsersData(users)
 
-	_, err := users.FinishLogin(m.pmapiClient, testAuthRefresh, testCredentials.Secret.MailboxPassword)
+	_, _, err := users.FinishLogin(m.pmapiClient, testAuthRefresh, testCredentials.Secret.MailboxPassword, testMainKeyString)
 	r.EqualError(t, err, "user is already connected")
 }
 
-func checkUsersFinishLogin(t *testing.T, m mocks, auth *pmapi.Auth, mailboxPassword []byte, expectedUserID string, expectedErr error) {
+func checkUsersFinishLogin(t *testing.T, m mocks, auth *pmapi.Auth, mailboxPassword []byte, expectedUserID string, expectedErr error, expecedKey bool) {
 	users := testNewUsers(t, m)
 	defer cleanUpUsersData(users)
 
-	user, err := users.FinishLogin(m.pmapiClient, auth, mailboxPassword)
+	user, key, err := users.FinishLogin(m.pmapiClient, auth, mailboxPassword, testMainKeyString)
 	if user != nil {
 		user.connect(m.pmapiClient)
 	}
 
 	r.Equal(t, expectedErr, err)
+	if expecedKey {
+		r.NotEqual(t, key, "")
+	} else {
+		r.Equal(t, key, "")
+	}
 
 	if expectedUserID != "" {
 		r.Equal(t, expectedUserID, user.ID())

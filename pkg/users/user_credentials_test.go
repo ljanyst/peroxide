@@ -88,7 +88,7 @@ func TestCheckBridgeLogin(t *testing.T) {
 	user := testNewUser(t, m)
 	defer cleanUpUserData(user)
 
-	err := user.CheckBridgeLogin(testCredentials.Secret.BridgePassword)
+	err := user.UnlockCredentials("main", testMainKeyString)
 	r.NoError(t, err)
 }
 
@@ -111,7 +111,7 @@ func TestCheckBridgeLoginLoggedOut(t *testing.T) {
 	r.Error(t, err)
 	defer cleanUpUserData(user)
 
-	err = user.CheckBridgeLogin(testCredentialsDisconnected.Secret.BridgePassword)
+	err = user.CheckCredentials("main", "asdf")
 	r.Equal(t, ErrLoggedOutUser, err)
 }
 
@@ -122,6 +122,6 @@ func TestCheckBridgeLoginBadPassword(t *testing.T) {
 	user := testNewUser(t, m)
 	defer cleanUpUserData(user)
 
-	err := user.CheckBridgeLogin("wrong!")
-	r.EqualError(t, err, "backend/credentials: incorrect password")
+	err := user.UnlockCredentials("main", "wrong!")
+	r.EqualError(t, err, "Bridge credentials checking failed")
 }

@@ -36,12 +36,13 @@ func (m *MockCredentialsStorer) EXPECT() *MockCredentialsStorerMockRecorder {
 }
 
 // Add mocks base method.
-func (m *MockCredentialsStorer) Add(arg0, arg1, arg2, arg3 string, arg4 []byte, arg5 []string) (*credentials.Credentials, error) {
+func (m *MockCredentialsStorer) Add(arg0, arg1, arg2, arg3 string, arg4 []byte, arg5 []string) (*credentials.Credentials, []byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Add", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(*credentials.Credentials)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].([]byte)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // Add indicates an expected call of Add.

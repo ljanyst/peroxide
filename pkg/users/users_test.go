@@ -18,6 +18,7 @@
 package users
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -68,7 +69,6 @@ var (
 		Secret: credentials.Secret{
 			APIToken:        "uid:acc",
 			MailboxPassword: []byte("pass"),
-			BridgePassword:  "0123456789abcdef",
 		},
 	}
 
@@ -79,7 +79,6 @@ var (
 		Secret: credentials.Secret{
 			APIToken:        "uid:acc",
 			MailboxPassword: []byte("pass"),
-			BridgePassword:  "0123456789abcdef",
 		},
 	}
 
@@ -90,7 +89,6 @@ var (
 		Secret: credentials.Secret{
 			APIToken:        "",
 			MailboxPassword: []byte{},
-			BridgePassword:  "0123456789abcdef",
 		},
 	}
 
@@ -101,7 +99,6 @@ var (
 		Secret: credentials.Secret{
 			APIToken:        "",
 			MailboxPassword: []byte{},
-			BridgePassword:  "0123456789abcdef",
 		},
 	}
 
@@ -136,7 +133,25 @@ var (
 	testPMAPIEvent = &pmapi.Event{ // nolint[gochecknoglobals]
 		EventID: "ACXDmTaBub14w==",
 	}
+
+	testMainKeyString = ""
+	testMainKeyBytes  = [32]byte{}
 )
+
+func init() {
+	copy(testMainKeyBytes[:], credentials.GenerateKey(32))
+
+	initKeys := func(c *credentials.Credentials) {
+		copy(c.Key[:], credentials.GenerateKey(32))
+		c.SealedKeys = make(map[string][]byte)
+		c.SealKey("main", testMainKeyBytes)
+	}
+	testMainKeyString = base64.StdEncoding.EncodeToString(testMainKeyBytes[:])
+	initKeys(testCredentials)
+	initKeys(testCredentialsSplit)
+	initKeys(testCredentialsDisconnected)
+	initKeys(testCredentialsSplitDisconnected)
+}
 
 type mocks struct {
 	t *testing.T
@@ -255,7 +270,7 @@ func mockAddingConnectedUser(t *testing.T, m mocks) {
 		m.pmapiClient.EXPECT().Unlock(gomock.Any(), testCredentials.Secret.MailboxPassword).Return(nil),
 		m.pmapiClient.EXPECT().CurrentUser(gomock.Any()).Return(testPMAPIUser, nil),
 		m.pmapiClient.EXPECT().Addresses().Return([]*pmapi.Address{testPMAPIAddress}),
-		m.credentialsStore.EXPECT().Add("user", "username", testAuthRefresh.UID, testAuthRefresh.RefreshToken, testCredentials.Secret.MailboxPassword, []string{testPMAPIAddress.Email}).Return(testCredentials, nil),
+		m.credentialsStore.EXPECT().Add("user", "username", testAuthRefresh.UID, testAuthRefresh.RefreshToken, testCredentials.Secret.MailboxPassword, []string{testPMAPIAddress.Email}).Return(testCredentials, testMainKeyBytes[:], nil),
 		m.credentialsStore.EXPECT().Get("user").Return(testCredentials, nil),
 	)
 
