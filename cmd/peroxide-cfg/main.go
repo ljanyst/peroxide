@@ -23,11 +23,10 @@ import (
 	"os"
 
 	"github.com/ljanyst/peroxide/pkg/bridge"
-	"github.com/ljanyst/peroxide/pkg/files"
 	"github.com/ljanyst/peroxide/pkg/logging"
 )
 
-var config = flag.String("config", files.ExpandTilde("~/.config/protonmail/bridge/prefs.json"), "configuration file")
+var config = flag.String("config", "/etc/peroxide.conf", "configuration file")
 var action = flag.String("action", "", "one of: gen-x509, list-accounts, delete-account, login-account, add-key, remove-key")
 var x509Org = flag.String("x509-org", "", "organization name to be used in X509 certificate")
 var x509Cn = flag.String("x509-cn", "", "common name to be used in X509 certificate")

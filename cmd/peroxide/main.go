@@ -22,12 +22,11 @@ import (
 	"os"
 
 	"github.com/ljanyst/peroxide/pkg/bridge"
-	"github.com/ljanyst/peroxide/pkg/files"
 	"github.com/ljanyst/peroxide/pkg/logging"
 	"github.com/sirupsen/logrus"
 )
 
-var config = flag.String("config", files.ExpandTilde("~/.config/protonmail/bridge/prefs.json"), "configuration file")
+var config = flag.String("config", "/etc/peroxide.conf", "configuration file")
 var logLevel = flag.String("log-level", "Warning", "account name")
 
 func main() {
