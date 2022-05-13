@@ -18,76 +18,59 @@
 package main
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"flag"
 	"fmt"
-	"io"
 	"os"
 
 	"github.com/ljanyst/peroxide/pkg/bridge"
 	"github.com/ljanyst/peroxide/pkg/files"
 	"github.com/ljanyst/peroxide/pkg/logging"
-	"github.com/sirupsen/logrus"
 )
 
 var config = flag.String("config", files.ExpandTilde("~/.config/protonmail/bridge/prefs.json"), "configuration file")
-var genKey = flag.Bool("gen-key", false, "generate a random key for the encryption of credentials")
-var genX509 = flag.Bool("gen-x509", false, "generate a self-signed X509 certificate")
+var action = flag.String("action", "", "one of: gen-x509, list-accounts, delete-account, login-account, add-key, remove-key")
 var x509Org = flag.String("x509-org", "", "organization name to be used in X509 certificate")
 var x509Cn = flag.String("x509-cn", "", "common name to be used in X509 certificate")
 var x509KeyFile = flag.String("x509-key", "key.pem", "output file for the RSA key")
 var x509CertFile = flag.String("x509-cert", "cert.pem", "output file for the X509 certificate")
-var list = flag.Bool("list-accounts", false, "list user accounts")
-var delete = flag.Bool("delete-account", false, "delete user account")
-var login = flag.Bool("login-account", false, "log in user account")
-var name = flag.String("name", "", "account name")
+var accountName = flag.String("account-name", "", "account name")
+var keyName = flag.String("key-name", "", "key name")
 var logLevel = flag.String("log-level", "Warning", "account name")
 
 func main() {
 	flag.Parse()
-	done := false
+	done := true
 
-	if *genKey {
-		var key [32]byte
-		if _, err := io.ReadFull(rand.Reader, key[:]); err != nil {
-			fmt.Fprintf(os.Stderr, "Can't read random bytes: %s\n", err)
-			os.Exit(1)
-		}
-		password := base64.StdEncoding.EncodeToString(key[:])
-		fmt.Println(password)
-		done = true
-	} else if *genX509 {
-		if err := generateX509(*x509Org, *x509Cn, *x509CertFile, *x509KeyFile); err != nil {
-			fmt.Fprintf(os.Stderr, "Can't generate an X509 certificate: %s\n", err)
-			os.Exit(1)
-		}
-		done = true
-	} else {
-		logging.SetLevel(*logLevel)
+	logging.SetLevel(*logLevel)
 
-		b := &bridge.Bridge{}
+	b := &bridge.Bridge{}
 
-		err := b.Configure(*config)
-		if err != nil {
-			logrus.WithError(err).Fatal("Failed to configure the bridge")
-		}
+	err := b.Configure(*config)
+	if err != nil {
+		fmt.Printf("Failed to configure the bridge: %s\n", err)
+		os.Exit(1)
+	}
 
-		if *list {
-			listAccounts(b)
-			done = true
-		} else if *delete {
-			err = deleteAccount(b, *name)
-			done = true
-		} else if *login {
-			err = loginAccount(b, *name)
-			done = true
-		}
+	switch *action {
+	case "gen-x509":
+		err = generateX509(*x509Org, *x509Cn, *x509CertFile, *x509KeyFile)
+	case "list-accounts":
+		listAccounts(b)
+	case "delete-account":
+		err = deleteAccount(b, *accountName)
+	case "login-account":
+		err = loginAccount(b, *accountName)
+	case "add-key":
+		err = addKey(b, *accountName, *keyName)
+	case "remove-key":
+		err = removeKey(b, *accountName, *keyName)
+	default:
+		done = false
+	}
 
-		if err != nil {
-			logrus.WithError(err).Fatal("Failed to execute command")
-			os.Exit(1)
-		}
+	if err != nil {
+		fmt.Printf("Failed to execute command: %s\n", err)
+		os.Exit(1)
 	}
 
 	if !done {
