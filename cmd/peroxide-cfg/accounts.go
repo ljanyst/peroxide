@@ -49,17 +49,18 @@ func askPass(prompt string) ([]byte, error) {
 }
 
 func listAccounts(b *bridge.Bridge) {
-	spacing := "%3d: %-20s %-20s %-15s "
 	for idx, user := range b.Users.GetUsers() {
-		connected := "disconnected"
-		if user.IsConnected() {
-			connected = "connected"
+		fmt.Printf("%3d: %s ", idx, user.Username())
+
+		fmt.Printf("| addresses: ")
+		for _, address := range user.GetAddresses() {
+			fmt.Printf("%s ", address)
 		}
 
-		fmt.Printf(spacing, idx, user.Username(), user.GetPrimaryAddress(), connected)
-
-		for _, address := range user.GetAddresses() {
-			fmt.Printf("%-20s", address)
+		fmt.Printf("| keys: ")
+		slots, _ := user.ListKeySlots()
+		for _, slot := range slots {
+			fmt.Printf("%s ", slot)
 		}
 
 		fmt.Println()
@@ -110,6 +111,10 @@ func loginAccount(b *bridge.Bridge, accountName string) error {
 		mainKey, err := askPass("Main key")
 		if err != nil {
 			return fmt.Errorf("The main key is required to modify an existing user: %s", err)
+		}
+
+		if len(mainKey) == 0 {
+			return fmt.Errorf("The main key is required to modify an existing user")
 		}
 
 		if err := user.UnlockCredentials("main", string(mainKey)); err != nil {
@@ -172,7 +177,51 @@ func loginAccount(b *bridge.Bridge, accountName string) error {
 	fmt.Printf("Account %s has been added successfully.\n", user.Username())
 	if len(key) != 0 {
 		fmt.Printf("Main key: %s\n", key)
+		fmt.Printf("PLEASE MAKE SURE TO NOTE THE KEY. IT'S NOT STORED ANYWHERE.\n")
 	}
 
 	return nil
+}
+
+func addKey(b *bridge.Bridge, accountName, keyName string) error {
+	if accountName == "" || keyName == "" {
+		return fmt.Errorf("Key name or account name empty")
+	}
+
+	user, err := b.Users.GetUser(accountName)
+	if err != nil {
+		return fmt.Errorf("Cannot get user data: %s", err)
+	}
+
+	mainKey, err := askPass("Main key")
+	if err != nil {
+		return fmt.Errorf("The main key is required to add a new key: %s", err)
+	}
+
+	if len(mainKey) == 0 {
+		return fmt.Errorf("The main key is required to add a new key")
+	}
+
+	key, err := user.AddKeySlot(keyName, string(mainKey))
+	if err != nil {
+		return fmt.Errorf("Cannot add key slot: %s", err)
+	}
+
+	fmt.Printf("Added key %s: %s\n", keyName, key)
+	fmt.Printf("PLEASE MAKE SURE TO NOTE THE KEY. IT'S NOT STORED ANYWHERE.\n")
+
+	return nil
+}
+
+func removeKey(b *bridge.Bridge, accountName, keyName string) error {
+	if accountName == "" || keyName == "" {
+		return fmt.Errorf("Key name or account name empty")
+	}
+
+	user, err := b.Users.GetUser(accountName)
+	if err != nil {
+		return fmt.Errorf("Cannot get user data: %s", err)
+	}
+
+	return user.RemoveKeySlot(keyName)
 }
