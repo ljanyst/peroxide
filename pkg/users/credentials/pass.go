@@ -24,6 +24,8 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"io"
+
+	"golang.org/x/crypto/nacl/secretbox"
 )
 
 func GenerateKey(size uint) []byte {
@@ -36,4 +38,33 @@ func GenerateKey(size uint) []byte {
 
 func generatePassword() string {
 	return base64.RawURLEncoding.EncodeToString(GenerateKey(16))
+}
+
+func Decrypt(msg []byte, key [32]byte) ([]byte, error) {
+	if len(msg) < 24 {
+		return nil, ErrDecryptionFailed
+	}
+
+	// Read the nonce
+	var nonce [24]byte
+	copy(nonce[:], msg[:24])
+
+	// Decrypt
+	decrypted, ok := secretbox.Open(nil, msg[24:], &nonce, &key)
+	if !ok {
+		return nil, ErrDecryptionFailed
+	}
+
+	return decrypted, nil
+}
+
+func Encrypt(msg []byte, key [32]byte) ([]byte, error) {
+	// Nonce must be different for each message
+	var nonce [24]byte
+	if _, err := io.ReadFull(rand.Reader, nonce[:]); err != nil {
+		return nil, err
+	}
+
+	// Encrypt the secret and append the result to the nonce
+	return secretbox.Seal(nonce[:], msg, &nonce, &key), nil
 }

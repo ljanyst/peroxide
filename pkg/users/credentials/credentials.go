@@ -21,14 +21,10 @@
 package credentials
 
 import (
-	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"io"
 	"strings"
-
-	"golang.org/x/crypto/nacl/secretbox"
 )
 
 type Secret struct {
@@ -88,18 +84,9 @@ func (s *Credentials) Unlock(slot, password string) error {
 	var passBytes [32]byte
 	copy(passBytes[:], pb)
 
-	if len(sealedKey) < 24 {
-		return ErrUnauthorized
-	}
-
-	// Read the nonce
-	var nonce [24]byte
-	copy(nonce[:], sealedKey[:24])
-
-	// Decrypt
-	keyBytes, ok := secretbox.Open(nil, sealedKey[24:], &nonce, &passBytes)
-	if !ok {
-		return ErrUnauthorized
+	keyBytes, err := Decrypt(sealedKey, passBytes)
+	if err != nil {
+		return err
 	}
 
 	if s.Locked() {
@@ -115,12 +102,10 @@ func (s *Credentials) SealKey(slot string, key [32]byte) error {
 		return ErrLocked
 	}
 
-	var nonce [24]byte
-	if _, err := io.ReadFull(rand.Reader, nonce[:]); err != nil {
+	var err error
+	if s.SealedKeys[slot], err = Encrypt(s.Key[:], key); err != nil {
 		return err
 	}
-
-	s.SealedKeys[slot] = secretbox.Seal(nonce[:], s.Key[:], &nonce, &key)
 	return nil
 }
 
@@ -134,31 +119,21 @@ func (s *Credentials) Encrypt() error {
 		return ErrEncryptionFailed
 	}
 
-	// Nonce must be different for each message
-	var nonce [24]byte
-	if _, err := io.ReadFull(rand.Reader, nonce[:]); err != nil {
+	if s.SealedSecret, err = Encrypt([]byte(secret), s.Key); err != nil {
 		return err
 	}
-
-	// Encrypt the secret and append the result to the nonce
-	s.SealedSecret = secretbox.Seal(nonce[:], []byte(secret), &nonce, &s.Key)
 
 	return nil
 }
 
 func (s *Credentials) Decrypt() error {
-	if len(s.SealedSecret) < 24 || s.Locked() {
+	if s.Locked() {
 		return ErrDecryptionFailed
 	}
 
-	// Read the nonce
-	var nonce [24]byte
-	copy(nonce[:], s.SealedSecret[:24])
-
-	// Decrypt
-	decrypted, ok := secretbox.Open(nil, s.SealedSecret[24:], &nonce, &s.Key)
-	if !ok {
-		return ErrDecryptionFailed
+	decrypted, err := Decrypt(s.SealedSecret, s.Key)
+	if err != nil {
+		return err
 	}
 
 	if err := json.Unmarshal(decrypted, &s.Secret); err != nil {
