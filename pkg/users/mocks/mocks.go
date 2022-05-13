@@ -51,6 +51,21 @@ func (mr *MockCredentialsStorerMockRecorder) Add(arg0, arg1, arg2, arg3, arg4, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockCredentialsStorer)(nil).Add), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
+// AddKeySlot mocks base method.
+func (m *MockCredentialsStorer) AddKeySlot(arg0, arg1, arg2 string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddKeySlot", arg0, arg1, arg2)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddKeySlot indicates an expected call of AddKeySlot.
+func (mr *MockCredentialsStorerMockRecorder) AddKeySlot(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddKeySlot", reflect.TypeOf((*MockCredentialsStorer)(nil).AddKeySlot), arg0, arg1, arg2)
+}
+
 // Delete mocks base method.
 func (m *MockCredentialsStorer) Delete(arg0 string) error {
 	m.ctrl.T.Helper()
@@ -95,6 +110,21 @@ func (mr *MockCredentialsStorerMockRecorder) List() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockCredentialsStorer)(nil).List))
 }
 
+// ListKeySlots mocks base method.
+func (m *MockCredentialsStorer) ListKeySlots(arg0 string) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListKeySlots", arg0)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListKeySlots indicates an expected call of ListKeySlots.
+func (mr *MockCredentialsStorerMockRecorder) ListKeySlots(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListKeySlots", reflect.TypeOf((*MockCredentialsStorer)(nil).ListKeySlots), arg0)
+}
+
 // Logout mocks base method.
 func (m *MockCredentialsStorer) Logout(arg0 string) (*credentials.Credentials, error) {
 	m.ctrl.T.Helper()
@@ -108,6 +138,20 @@ func (m *MockCredentialsStorer) Logout(arg0 string) (*credentials.Credentials, e
 func (mr *MockCredentialsStorerMockRecorder) Logout(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Logout", reflect.TypeOf((*MockCredentialsStorer)(nil).Logout), arg0)
+}
+
+// RemoveKeySlot mocks base method.
+func (m *MockCredentialsStorer) RemoveKeySlot(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveKeySlot", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveKeySlot indicates an expected call of RemoveKeySlot.
+func (mr *MockCredentialsStorerMockRecorder) RemoveKeySlot(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveKeySlot", reflect.TypeOf((*MockCredentialsStorer)(nil).RemoveKeySlot), arg0, arg1)
 }
 
 // UpdateEmails mocks base method.
