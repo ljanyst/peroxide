@@ -95,7 +95,7 @@ func newIMAPBackend(
 	}
 }
 
-func (ib *imapBackend) getUser(address, username, password string) (*imapUser, error) {
+func (ib *imapBackend) getUser(address, slot, password string) (*imapUser, error) {
 	ib.usersLocker.Lock()
 	defer ib.usersLocker.Unlock()
 
@@ -104,11 +104,11 @@ func (ib *imapBackend) getUser(address, username, password string) (*imapUser, e
 	if ok {
 		return imapUser, nil
 	}
-	return ib.createUser(address, username, password)
+	return ib.createUser(address, slot, password)
 }
 
 // createUser require that address MUST be in lowercase.
-func (ib *imapBackend) createUser(address, username, password string) (*imapUser, error) {
+func (ib *imapBackend) createUser(address, slot, password string) (*imapUser, error) {
 	log.WithField("address", address).Debug("Creating new IMAP user")
 
 	user, err := ib.usersMgr.GetUser(address)
@@ -116,7 +116,7 @@ func (ib *imapBackend) createUser(address, username, password string) (*imapUser
 		return nil, err
 	}
 
-	if err := user.BringOnline(username, password); err != nil {
+	if err := user.BringOnline(slot, password); err != nil {
 		return nil, err
 	}
 
@@ -155,13 +155,16 @@ func (ib *imapBackend) deleteUser(address string) {
 
 // Login authenticates a user.
 func (ib *imapBackend) Login(_ *imap.ConnInfo, username, password string) (goIMAPBackend.User, error) {
-	imapUser, err := ib.getUser(username, username, password)
+
+	username, slot := users.DecodeLogin(username)
+
+	imapUser, err := ib.getUser(username, slot, password)
 	if err != nil {
 		log.WithError(err).Warn("Cannot get user")
 		return nil, err
 	}
 
-	if err := imapUser.user.CheckCredentials("main", password); err != nil {
+	if err := imapUser.user.CheckCredentials(slot, password); err != nil {
 		log.WithError(err).Error("Could not check bridge password")
 		if err := imapUser.Logout(); err != nil {
 			log.WithError(err).Warn("Could not logout user after unsuccessful login check")

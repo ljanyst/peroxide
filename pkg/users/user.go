@@ -374,7 +374,7 @@ func (u *User) UnlockCredentials(slot, password string) error {
 	return u.creds.Unlock(slot, password)
 }
 
-func (u *User) BringOnline(username, password string) error {
+func (u *User) BringOnline(slot, password string) error {
 	u.lock.Lock()
 	defer u.lock.Unlock()
 
@@ -383,7 +383,7 @@ func (u *User) BringOnline(username, password string) error {
 	}
 
 	if u.creds.Locked() {
-		if err := u.creds.Unlock("main", password); err != nil {
+		if err := u.creds.Unlock(slot, password); err != nil {
 			return err
 		}
 	}

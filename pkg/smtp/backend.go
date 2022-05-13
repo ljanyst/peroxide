@@ -55,6 +55,7 @@ func newSMTPBackend(
 // Login authenticates a user.
 func (sb *smtpBackend) Login(_ *goSMTPBackend.ConnectionState, username, password string) (goSMTPBackend.Session, error) {
 	username = strings.ToLower(username)
+	username, slot := users.DecodeLogin(username)
 
 	user, err := sb.users.GetUser(username)
 	if err != nil {
@@ -62,11 +63,11 @@ func (sb *smtpBackend) Login(_ *goSMTPBackend.ConnectionState, username, passwor
 		return nil, err
 	}
 
-	if err := user.BringOnline(username, password); err != nil {
+	if err := user.BringOnline(slot, password); err != nil {
 		return nil, err
 	}
 
-	if err := user.CheckCredentials("main", password); err != nil {
+	if err := user.CheckCredentials(slot, password); err != nil {
 		log.WithError(err).Error("Could not check bridge password")
 		// Apple Mail sometimes generates a lot of requests very quickly. It's good practice
 		// to have a timeout after bad logins so that we can slow those requests down a little bit.
