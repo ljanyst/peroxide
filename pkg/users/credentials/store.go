@@ -18,6 +18,7 @@
 package credentials
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"os"
@@ -28,13 +29,14 @@ import (
 )
 
 var (
-	ErrNotFound         = errors.New("Credentials not found")
-	ErrLocked           = errors.New("Credentials are locked")
-	ErrDecryptionFailed = errors.New("Decryption of credentials failed")
-	ErrEncryptionFailed = errors.New("Encryption of credentials failed")
-	ErrUnauthorized     = errors.New("Bridge credentials checking failed")
-	ErrAlreadyExists    = errors.New("Credential already exists")
-	log                 = logrus.WithField("pkg", "credentials")
+	ErrNotFound           = errors.New("Credentials not found")
+	ErrLocked             = errors.New("Credentials are locked")
+	ErrDecryptionFailed   = errors.New("Decryption of credentials failed")
+	ErrEncryptionFailed   = errors.New("Encryption of credentials failed")
+	ErrUnauthorized       = errors.New("Bridge credentials checking failed")
+	ErrAlreadyExists      = errors.New("Credential already exists")
+	ErrCantRemoveMainSlot = errors.New("Cannot remove the main key slot")
+	log                   = logrus.WithField("pkg", "credentials")
 )
 
 // Store is an encrypted credentials store.
@@ -160,6 +162,89 @@ func (s *Store) UpdateToken(userID, uid, ref string) (*Credentials, error) {
 	}
 
 	return credentials, s.saveCredentials()
+}
+
+func (s *Store) ListKeySlots(userID string) ([]string, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	credentials, ok := s.creds[userID]
+	if !ok {
+		return nil, ErrNotFound
+	}
+
+	slots := []string{}
+	for k := range credentials.SealedKeys {
+		if k != "main" {
+			slots = append(slots, k)
+		}
+	}
+
+	sort.Strings(slots)
+	slots = append([]string{"main"}, slots...)
+
+	return slots, nil
+}
+
+func (s *Store) RemoveKeySlot(userID, slot string) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	credentials, ok := s.creds[userID]
+	if !ok {
+		return ErrNotFound
+	}
+
+	if slot == "main" {
+		return ErrCantRemoveMainSlot
+	}
+
+	key, ok := credentials.SealedKeys[slot]
+	if !ok {
+		return ErrNotFound
+	}
+
+	delete(credentials.SealedKeys, slot)
+
+	if err := s.saveCredentials(); err != nil {
+		credentials.SealedKeys[slot] = key
+		return err
+	}
+
+	return nil
+}
+
+func (s *Store) AddKeySlot(userID, slot, mainKey string) (string, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	credentials, ok := s.creds[userID]
+	if !ok {
+		return "", ErrNotFound
+	}
+
+	_, ok = credentials.SealedKeys[slot]
+	if ok {
+		return "", ErrAlreadyExists
+	}
+
+	err := credentials.Unlock("main", mainKey)
+	if err != nil {
+		return "", err
+	}
+
+	var key [32]byte
+	copy(key[:], GenerateKey(32))
+	if err := credentials.SealKey(slot, key); err != nil {
+		return "", err
+	}
+
+	if err := s.saveCredentials(); err != nil {
+		delete(credentials.SealedKeys, slot)
+		return "", err
+	}
+
+	return base64.StdEncoding.EncodeToString(key[:]), nil
 }
 
 func (s *Store) Logout(userID string) (*Credentials, error) {

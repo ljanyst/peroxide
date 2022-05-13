@@ -29,6 +29,9 @@ type CredentialsStorer interface {
 	UpdateEmails(userID string, emails []string) (*credentials.Credentials, error)
 	UpdatePassword(userID string, password []byte) (*credentials.Credentials, error)
 	UpdateToken(userID, uid, ref string) (*credentials.Credentials, error)
+	ListKeySlots(userID string) ([]string, error)
+	RemoveKeySlot(userID, slot string) error
+	AddKeySlot(userID, slot, mainKey string) (string, error)
 	Logout(userID string) (*credentials.Credentials, error)
 	Delete(userID string) error
 }

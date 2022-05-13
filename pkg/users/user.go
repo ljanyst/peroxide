@@ -491,6 +491,27 @@ func (u *User) logout() error {
 	return nil
 }
 
+func (u *User) ListKeySlots() ([]string, error) {
+	u.lock.RLock()
+	defer u.lock.RUnlock()
+
+	return u.credStorer.ListKeySlots(u.userID)
+}
+
+func (u *User) RemoveKeySlot(slot string) error {
+	u.lock.Lock()
+	defer u.lock.Unlock()
+
+	return u.credStorer.RemoveKeySlot(u.userID, slot)
+}
+
+func (u *User) AddKeySlot(slot, mainKey string) (string, error) {
+	u.lock.Lock()
+	defer u.lock.Unlock()
+
+	return u.credStorer.AddKeySlot(u.userID, slot, mainKey)
+}
+
 func (u *User) closeEventLoopAndCacher() {
 	if u.store == nil {
 		return
