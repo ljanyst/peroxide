@@ -240,7 +240,7 @@ func testNewUsersWithUsers(t *testing.T, m mocks) *Users {
 func testNewUsers(t *testing.T, m mocks) *Users { //nolint[unparam]
 	users := New(m.eventListener, m.clientManager, m.credentialsStore, m.storeMaker)
 	for _, user := range users.users {
-		user.BringOnline("foo", "bar")
+		user.BringOnline("main", "foobar")
 	}
 
 	waitForEvents()
