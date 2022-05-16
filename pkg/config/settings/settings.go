@@ -47,14 +47,11 @@ const (
 
 type Settings struct {
 	*keyValueStore
-
-	settingsDir string
 }
 
 func New(settingsPath string) *Settings {
 	s := &Settings{
 		keyValueStore: newKeyValueStore(settingsPath),
-		settingsDir:   filepath.Dir(settingsPath),
 	}
 
 	s.setDefaultValues()
@@ -83,10 +80,11 @@ func (s *Settings) setDefaultValues() {
 	s.setDefault(IMAPPortKey, DefaultIMAPPort)
 	s.setDefault(SMTPPortKey, DefaultSMTPPort)
 
-	s.setDefault(CacheDir, filepath.Join(s.settingsDir, "cache"))
-	s.setDefault(X509Key, filepath.Join(s.settingsDir, "key.pem"))
-	s.setDefault(X509Cert, filepath.Join(s.settingsDir, "cert.pem"))
-	s.setDefault(CookieJar, filepath.Join(s.settingsDir, "cookies.json"))
-	s.setDefault(CredentialsStore, filepath.Join(s.settingsDir, "credentials.json"))
+	settingsDir := "/etc/peroxide"
+	s.setDefault(CacheDir, "/var/cache/peroxide")
+	s.setDefault(X509Key, filepath.Join(settingsDir, "key.pem"))
+	s.setDefault(X509Cert, filepath.Join(settingsDir, "cert.pem"))
+	s.setDefault(CookieJar, filepath.Join(settingsDir, "cookies.json"))
+	s.setDefault(CredentialsStore, filepath.Join(settingsDir, "credentials.json"))
 	s.setDefault(ServerAddress, "127.0.0.1")
 }
