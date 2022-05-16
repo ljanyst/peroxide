@@ -4,27 +4,104 @@ peroxide
 
 Peroxide is a fork of the [ProtonMail bridge][1]. Its goal is to be much like
 [Hydroxide][2] except with as much re-use of the upstream code as possible. The
-reason for the re-use is to ensure that the changes to the service APIs can be
-merged in as fast and as easily as possible. At the same time, Peroxide aims to:
+re-use ensures that the upstream changes to the service APIs can be merged in as
+fast and as efficiently as possible. At the same time, Peroxide aims to:
 
- * run as a server providing data access using standard protocols, so that a
-   wide variety of devices can use their native productivity tools instead of
+ * run as a server providing data access using standard protocols so that a wide
+   variety of devices can use their native productivity tools instead of
    ProtonMail's proprietary ones
-
  * implement features that are missing from the upstream version because they
    are hard to make work with Outlook
-
  * make things easy to hack on without a deluge of dependencies providing little
    value in the context of the two above points
 
-To than end, Perixide:
+To that end, Peroxide:
 
- * is buildable with `go build`
+ * is buildable using plain `go build`
  * drops the original GUI and CLI
- * drops all the desktop desktop integration and trackers
+ * drops all the desktop integration and trackers
  * provides a server program and a separate configuration program
+ * unables multiple device-specific passwords for every account
+ * encrypts the ProtonMail credentials on disk and does not require any external
+   secret store to do that
+ * user-supplied passwords are keys used to decrypt the credentials in memory
 
-Example configuration file is provided as `config.example.yaml`.
+Server setup
+------------
+
+Peroxide reads its settings from a configuration file located in
+`/etc/peroxide.conf` by default. This configuration file holds a bunch of
+key-value pairs in YAML format. There's an example in the root of the source
+tree in a file called `config.example.yaml`.
+
+The package provides two executables:
+
+ * `peroxide` - the program that interacts with ProtonMail's services and acts
+   as an IMAP and SMTP server for the email clients
+ * `peroxide-cfg` - the program that manages the user accounts, login keys, and
+   implements other helper functions
+
+Type `go build` in `cmd/peroxide` and in `cmd/peroxide-cfg` subdirectories of
+the source tree to build them. They are static binaries and have no
+dependencies. The installation process boils down to copying them to the
+appropriate system-wide binary directory (like `/usr/bin`).
+
+Peroxide encrypts the IMAP and SMTP communication with the clients using TLS and
+will not work without a valid certificate. You can either use a service like
+Let's Encrypt to get a certificate signed by a trusted CA or use `peroxide-cfg`
+to generate a self-signed one. Running:
+
+    ]==>  peroxide-cfg -action gen-x509 -x509-org "my-organization" -x509-cn "my-hostname"
+
+will generate `cert.pem` and `key.pem` files in the current working directory.
+These files must be copied to the location where the server expects them, as
+configured in `peroxide.conf`. By default, it's: `/etc/peroxide/`. The
+`/etc/peroxide` directory needs to be writable to both the server and the
+configuration program because that's the default location for the credentials
+store and cookies cache. So does the cache directory located by default in
+'/var/cache/peroxide`.
+
+You can adjust and copy the `peroxide.service` file found in the root of the
+source tree to `/etc/systemd/system/` and enable the service by typing:
+
+    ]==> sudo systemctl daemon-reload
+    ]==> sudo systemctl enable peroxide
+    ]==> sudo systemctl start peroxide
+
+User management
+---------------
+
+To log in to your ProtonMail account, type:
+
+    ]==> peroxide-cfg -action login-account -account-name foo
+
+It will authenticate you with the ProtonMail's services and print a
+random-generated key. Please note this key; it will be needed to add
+device-specific keys or re-login.
+
+To add a device-specific key type:
+
+    ]==> peroxide-cfg -action add-key -account-name foo -key-name test
+
+The command will add a device-specific key called `test` to the user account
+`foo` and print that key to standard output. As above, this key is not stored
+anywhere, but it must be used for authentication in your email program.
+
+For the settings described above, the emain client configuration would be:
+
+ * **Login:** `foo..test@protonmail.com` (appending `..test` to the username
+   portion of the login selects the device-specific key named `test`)
+ * **Password:** The random key printed by the configuration program when adding
+   the device-specific key
+ * **SMTP/IMAP server:** The address of the server running peroxide
+ * **SMTP Port:** 1025
+ * **IMAP Port:** 1143
+ * **Encryption:** STARTTLS for both SMTP and IMAP
+
+`peroxide-cfg` provides a bunch of other functions dealing with user and key
+management described in the program's help message. Any change to the
+configuration, including adding accounts or keys, necessitates a restart of the
+server.
 
 [1]: https://github.com/ProtonMail/proton-bridge
 [2]: https://github.com/emersion/hydroxide
