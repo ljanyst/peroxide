@@ -29,6 +29,10 @@ To that end, Peroxide:
 Server setup
 ------------
 
+**Note:** This software has not been thoroughly reviewed for security.
+Therefore, I strongly advise against running it on the open Internet - run it
+locally or use a trusted VPN.
+
 Peroxide reads its settings from a configuration file located in
 `/etc/peroxide.conf` by default. This configuration file holds a bunch of
 key-value pairs in YAML format. There's an example in the root of the source
