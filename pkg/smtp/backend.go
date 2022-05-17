@@ -30,6 +30,7 @@ import (
 type smtpBackend struct {
 	eventListener listener.Listener
 	users         *users.Users
+	bccSelf       bool
 	sendRecorder  *sendRecorder
 }
 
@@ -37,17 +38,12 @@ type smtpBackend struct {
 func NewSMTPBackend(
 	eventListener listener.Listener,
 	users *users.Users,
+	bccSelf bool,
 ) *smtpBackend { //nolint[golint]
-	return newSMTPBackend(eventListener, users)
-}
-
-func newSMTPBackend(
-	eventListener listener.Listener,
-	users *users.Users,
-) *smtpBackend {
 	return &smtpBackend{
 		eventListener: eventListener,
 		users:         users,
+		bccSelf:       bccSelf,
 		sendRecorder:  newSendRecorder(),
 	}
 }
@@ -78,7 +74,7 @@ func (sb *smtpBackend) Login(_ *goSMTPBackend.ConnectionState, username, passwor
 	// AddressID is only for split mode--it has to be empty for combined mode.
 	addressID := ""
 
-	return newSMTPUser(sb.eventListener, sb, user, username, addressID)
+	return newSMTPUser(sb.eventListener, sb, user, username, addressID, sb.bccSelf)
 }
 
 func (sb *smtpBackend) AnonymousLogin(_ *goSMTPBackend.ConnectionState) (goSMTPBackend.Session, error) {

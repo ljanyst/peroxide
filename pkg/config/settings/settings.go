@@ -43,6 +43,7 @@ const (
 	CookieJar             = "CookieJar"
 	ServerAddress         = "ServerAddress"
 	CredentialsStore      = "CredentialsStore"
+	BCCSelf               = "BCCSelf"
 )
 
 type Settings struct {
@@ -79,6 +80,7 @@ func (s *Settings) setDefaultValues() {
 	s.setDefault(APIPortKey, DefaultAPIPort)
 	s.setDefault(IMAPPortKey, DefaultIMAPPort)
 	s.setDefault(SMTPPortKey, DefaultSMTPPort)
+	s.setDefault(BCCSelf, "false")
 
 	settingsDir := "/etc/peroxide"
 	s.setDefault(CacheDir, "/var/cache/peroxide")

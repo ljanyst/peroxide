@@ -47,6 +47,7 @@ type smtpUser struct {
 	storeUser     storeUserProvider
 	username      string
 	addressID     string
+	bccSelf       bool
 
 	returnPath string
 	to         []string
@@ -59,6 +60,7 @@ func newSMTPUser(
 	user *users.User,
 	username string,
 	addressID string,
+	bccSelf bool,
 ) (goSMTPBackend.Session, error) {
 	storeUser := user.GetStore()
 	if storeUser == nil {
@@ -72,6 +74,7 @@ func newSMTPUser(
 		storeUser:     storeUser,
 		username:      username,
 		addressID:     addressID,
+		bccSelf:       bccSelf,
 	}, nil
 }
 
@@ -203,6 +206,19 @@ func (su *smtpUser) Data(r io.Reader) error {
 	if len(su.to) == 0 {
 		return errors.New("missing recipient")
 	}
+
+	hasSelf := false
+	for _, addr := range su.to {
+		if addr == su.returnPath {
+			hasSelf = true
+			break
+		}
+	}
+
+	if !hasSelf && su.bccSelf {
+		su.to = append(su.to, su.returnPath)
+	}
+
 	return su.Send(su.returnPath, su.to, r)
 }
 
