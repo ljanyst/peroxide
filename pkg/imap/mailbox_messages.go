@@ -520,6 +520,12 @@ func (im *imapMailbox) listMessages(isUID bool, seqSet *imap.SeqSet, items []ima
 		}
 	}()
 
+	// We always report the sent folder as empty in the BCC self mode because
+	// the sent messages will appear in different folders
+	if im.user.backend.bccSelf && im.storeMailbox.LabelID() == pmapi.SentLabel {
+		return nil
+	}
+
 	if !isUID {
 		// EXPUNGE cannot be sent during listing and can come only from
 		// the event loop, so we prevent any server side update to avoid

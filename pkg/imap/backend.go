@@ -50,6 +50,7 @@ type imapBackend struct {
 	updates       *imapUpdates
 	eventListener listener.Listener
 	listWorkers   int
+	bccSelf       bool
 
 	users       map[string]*imapUser
 	usersLocker sync.Locker
@@ -64,11 +65,12 @@ func NewIMAPBackend(
 	eventListener listener.Listener,
 	setting *settings.Settings,
 	users *users.Users,
+	bccSelf bool,
 ) *imapBackend { //nolint[golint]
 
 	imapWorkers := setting.GetInt(settings.IMAPWorkers)
 	cacheDir := setting.Get(settings.CacheDir)
-	backend := newIMAPBackend(cacheDir, users, eventListener, imapWorkers)
+	backend := newIMAPBackend(cacheDir, users, eventListener, imapWorkers, bccSelf)
 
 	go backend.monitorDisconnectedUsers()
 
@@ -80,6 +82,7 @@ func newIMAPBackend(
 	users *users.Users,
 	eventListener listener.Listener,
 	listWorkers int,
+	bccSelf bool,
 ) *imapBackend {
 	return &imapBackend{
 		usersMgr:      users,
@@ -92,6 +95,7 @@ func newIMAPBackend(
 		imapCachePath: filepath.Join(cacheDir, "imap_backend_cache.json"),
 		imapCacheLock: &sync.RWMutex{},
 		listWorkers:   listWorkers,
+		bccSelf:       bccSelf,
 	}
 }
 
