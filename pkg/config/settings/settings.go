@@ -83,7 +83,7 @@ func (s *Settings) setDefaultValues() {
 	s.setDefault(BCCSelf, "false")
 
 	settingsDir := "/etc/peroxide"
-	s.setDefault(CacheDir, "/var/cache/peroxide")
+	s.setDefault(CacheDir, "/var/cache/peroxide/cache")
 	s.setDefault(X509Key, filepath.Join(settingsDir, "key.pem"))
 	s.setDefault(X509Cert, filepath.Join(settingsDir, "cert.pem"))
 	s.setDefault(CookieJar, filepath.Join(settingsDir, "cookies.json"))

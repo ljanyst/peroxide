@@ -4,10 +4,11 @@
 #  "AllowProxy":       "false",
 #  "CacheEnabled":     "true",
 #  "CacheCompression": "true",
-#  "CacheDir":         "./run/cache",
-#  "X509Key":          "./run/key.pem",
-#  "X509Cert":         "./run/cert.pem",
-#  "CookieJar":        "./run/cookies.json",
-#  "CredentialsStore": "./run/credentials.json",
-#  "ServerAddress":    "[::0]"
+#  "CacheDir":         "/var/cache/peroxide/cache",
+#  "X509Key":          "/etc/peroxide/key.pem",
+#  "X509Cert":         "/etc/peroxide/cert.pem",
+#  "CookieJar":        "/etc/peroxide/cookies.json",
+#  "CredentialsStore": "/etc/peroxide/credentials.json",
+#  "ServerAddress":    "[::0]",
+#  "BCCSelf":          "false"
 }
