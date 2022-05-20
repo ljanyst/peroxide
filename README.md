@@ -14,17 +14,20 @@ fast and as efficiently as possible. At the same time, Peroxide aims to:
    are hard to make work with Outlook
  * make things easy to hack on without a deluge of dependencies providing little
    value in the context of the two above points
+ * limit the exposure to supply chain attacs
 
 To that end, Peroxide:
 
  * is buildable using plain `go build`
  * drops the original GUI and CLI
  * drops all the desktop integration and trackers
- * provides a server program and a separate configuration program
+ * drops dependence on binary packages
+ * drops the integrated upgrade functionality
  * unables multiple device-specific passwords for every account
  * encrypts the ProtonMail credentials on disk and does not require any external
    secret store to do that
- * user-supplied passwords are keys used to decrypt the credentials in memory
+ * user-supplied passwords are keys used to decrypt the credentials in memory; they
+   are never stored on disk
 
 Server setup
 ------------
@@ -32,6 +35,8 @@ Server setup
 **Note:** This software has not been thoroughly reviewed for security.
 Therefore, I strongly advise against running it on the open Internet - run it
 locally or use a trusted VPN.
+
+Run the `install.sh` script to install peroxide in your system.
 
 Peroxide reads its settings from a configuration file located in
 `/etc/peroxide.conf` by default. This configuration file holds a bunch of
@@ -45,30 +50,19 @@ The package provides two executables:
  * `peroxide-cfg` - the program that manages the user accounts, login keys, and
    implements other helper functions
 
-Type `go build` in `cmd/peroxide` and in `cmd/peroxide-cfg` subdirectories of
-the source tree to build them. They are static binaries and have no
-dependencies. The installation process boils down to copying them to the
-appropriate system-wide binary directory (like `/usr/bin`).
-
 Peroxide encrypts the IMAP and SMTP communication with the clients using TLS and
 will not work without a valid certificate. You can either use a service like
 Let's Encrypt to get a certificate signed by a trusted CA or use `peroxide-cfg`
 to generate a self-signed one. Running:
 
-    ]==>  peroxide-cfg -action gen-x509 -x509-org "my-organization" -x509-cn "my-hostname"
+    ]==> sudo -u peroxide peroxide-cfg -action gen-x509 -x509-org "my-organization" -x509-cn "my-hostname"
 
 will generate `cert.pem` and `key.pem` files in the current working directory.
 These files must be copied to the location where the server expects them, as
-configured in `peroxide.conf`. By default, it's: `/etc/peroxide/`. The
-`/etc/peroxide` directory needs to be writable to both the server and the
-configuration program because that's the default location for the credentials
-store and cookies cache. So does the cache directory located by default in
-'/var/cache/peroxide`.
+configured in `peroxide.conf`. By default, it's: `/etc/peroxide/`.
 
-You can adjust and copy the `peroxide.service` file found in the root of the
-source tree to `/etc/systemd/system/` and enable the service by typing:
+You can then enable the service by typing:
 
-    ]==> sudo systemctl daemon-reload
     ]==> sudo systemctl enable peroxide
     ]==> sudo systemctl start peroxide
 
@@ -77,7 +71,7 @@ User management
 
 To log in to your ProtonMail account, type:
 
-    ]==> peroxide-cfg -action login-account -account-name foo
+    ]==> sudo -u peroxide peroxide-cfg -action login-account -account-name foo
 
 It will authenticate you with the ProtonMail's services and print a
 random-generated key. Please note this key; it will be needed to add
@@ -85,7 +79,7 @@ device-specific keys or re-login.
 
 To add a device-specific key type:
 
-    ]==> peroxide-cfg -action add-key -account-name foo -key-name test
+    ]==> sudo -u peroxide peroxide-cfg -action add-key -account-name foo -key-name test
 
 The command will add a device-specific key called `test` to the user account
 `foo` and print that key to standard output. As above, this key is not stored
