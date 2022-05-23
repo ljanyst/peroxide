@@ -18,6 +18,7 @@
 package message
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/base64"
 	"io"
@@ -27,8 +28,8 @@ import (
 	"strings"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
-	pmmime "github.com/ljanyst/peroxide/pkg/mime"
 	"github.com/emersion/go-message/textproto"
+	pmmime "github.com/ljanyst/peroxide/pkg/mime"
 	"github.com/pkg/errors"
 )
 
@@ -62,7 +63,11 @@ func EncryptRFC822(kr *crypto.KeyRing, r io.Reader) ([]byte, error) {
 }
 
 func writeEncryptedPart(kr *crypto.KeyRing, header *textproto.Header, r io.Reader) (io.WriterTo, error) {
-	decoder := getTransferDecoder(r, header.Get("Content-Transfer-Encoding"))
+	decoder, err := getTransferDecoder(r, header.Get("Content-Transfer-Encoding"))
+	if err != nil {
+		return nil, err
+	}
+
 	encoded := new(bytes.Buffer)
 
 	contentType, contentParams, err := parseContentType(header.Get("Content-Type"))
@@ -210,16 +215,52 @@ func writeEncryptedMultiPart(kr *crypto.KeyRing, w io.Writer, header *textproto.
 	return writer.done()
 }
 
-func getTransferDecoder(r io.Reader, encoding string) io.Reader {
+type Base64Cleaner struct {
+	r io.Reader
+}
+
+func NewBase64Cleaner(r io.Reader) (*Base64Cleaner, error) {
+	reader := bufio.NewReader(r)
+	var data []byte
+
+	for {
+		line, err := reader.ReadBytes('\n')
+
+		if len(line) != 0 {
+			line = bytes.TrimSpace(line)
+			line = bytes.TrimSuffix(line, []byte("!"))
+			data = append(data, line...)
+		}
+
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return nil, err
+		}
+	}
+
+	return &Base64Cleaner{bytes.NewReader(data)}, nil
+}
+
+func (c *Base64Cleaner) Read(b []byte) (int, error) {
+	return c.r.Read(b)
+}
+
+func getTransferDecoder(r io.Reader, encoding string) (io.Reader, error) {
 	switch strings.ToLower(encoding) {
 	case "base64":
-		return base64.NewDecoder(base64.StdEncoding, r)
+		cleaner, err := NewBase64Cleaner(r)
+		if err != nil {
+			return nil, err
+		}
+		return base64.NewDecoder(base64.StdEncoding, cleaner), nil
 
 	case "quoted-printable":
-		return quotedprintable.NewReader(r)
+		return quotedprintable.NewReader(r), nil
 
 	default:
-		return r
+		return r, nil
 	}
 }
 
