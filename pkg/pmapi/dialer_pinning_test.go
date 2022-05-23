@@ -83,16 +83,6 @@ func TestTLSSignedCertWrongPublicKey(t *testing.T) {
 	r.Error(t, err, "expected dial to fail because of wrong public key")
 }
 
-func TestTLSSignedCertTrustedPublicKey(t *testing.T) {
-	skipIfProxyIsSet(t)
-
-	_, dialer, _ := createClientWithPinningDialer("")
-	copyTrustedPins(dialer.pinChecker)
-	dialer.pinChecker.trustedPins = append(dialer.pinChecker.trustedPins, `pin-sha256="W8/42Z0ffufwnHIOSndT+eVzBJSC0E8uTIC8O6mEliQ="`)
-	_, err := dialer.DialTLS("tcp", "rsa4096.badssl.com:443")
-	r.NoError(t, err, "expected dial to succeed because public key is known and cert is signed by CA")
-}
-
 func TestTLSSelfSignedCertTrustedPublicKey(t *testing.T) {
 	skipIfProxyIsSet(t)
 
