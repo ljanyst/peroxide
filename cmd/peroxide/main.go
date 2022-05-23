@@ -20,6 +20,8 @@ package main
 import (
 	"flag"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/ljanyst/peroxide/pkg/bridge"
 	"github.com/ljanyst/peroxide/pkg/logging"
@@ -28,11 +30,41 @@ import (
 
 var config = flag.String("config", "/etc/peroxide.conf", "configuration file")
 var logLevel = flag.String("log-level", "Warning", "account name")
+var logFile = flag.String("log-file", "", "output file for diagnostics")
+
+func setLogFile(filePath string) *os.File {
+	logFile, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic("Cannot open log file: " + err.Error())
+	}
+	logrus.SetOutput(logFile)
+	return logFile
+}
+
+func rotateLogFile(filePath string) {
+	signalCh := make(chan os.Signal, 1)
+	signal.Notify(signalCh, syscall.SIGHUP)
+
+	f := setLogFile(filePath)
+
+	for {
+		select {
+		case <-signalCh:
+			f.Close()
+			f = setLogFile(filePath)
+			logrus.Debug("Logfile rotated")
+		}
+	}
+}
 
 func main() {
 	flag.Parse()
 
 	logging.SetLevel(*logLevel)
+
+	if *logFile != "" {
+		go rotateLogFile(*logFile)
+	}
 
 	b := &bridge.Bridge{}
 
