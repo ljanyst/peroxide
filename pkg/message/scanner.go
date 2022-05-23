@@ -86,7 +86,7 @@ func (s *partScanner) readToBoundary() ([]byte, bool, error) {
 		case bytes.HasPrefix(bytes.TrimSpace(line), []byte("--"+s.boundary)):
 			return bytes.TrimSuffix(bytes.TrimSuffix(res, []byte("\n")), []byte("\r")), true, nil
 
-		case bytes.HasSuffix(bytes.TrimSpace(line), []byte(s.boundary+"--")):
+		case bytes.Compare(bytes.TrimSpace(line), []byte("--"+s.boundary+"--")) == 0:
 			return bytes.TrimSuffix(bytes.TrimSuffix(res, []byte("\n")), []byte("\r")), false, nil
 
 		default:
