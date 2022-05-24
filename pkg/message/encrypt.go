@@ -18,7 +18,6 @@
 package message
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/base64"
 	"io"
@@ -215,83 +214,17 @@ func writeEncryptedMultiPart(kr *crypto.KeyRing, w io.Writer, header *textproto.
 	return writer.done()
 }
 
-type Base64Cleaner struct {
-	r io.Reader
-}
-
-func NewBase64Cleaner(r io.Reader) (*Base64Cleaner, error) {
-	reader := bufio.NewReader(r)
-	var data []byte
-
-	for {
-		line, err := reader.ReadBytes('\n')
-
-		if len(line) != 0 {
-			line = bytes.TrimSpace(line)
-			line = bytes.TrimSuffix(line, []byte("!"))
-			data = append(data, line...)
-		}
-
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			}
-			return nil, err
-		}
-	}
-
-	return &Base64Cleaner{bytes.NewReader(data)}, nil
-}
-
-func (c *Base64Cleaner) Read(b []byte) (int, error) {
-	return c.r.Read(b)
-}
-
-type QuotedPrintableCleaner struct {
-	r io.Reader
-}
-
-func NewQuotedPrintableCleaner(r io.Reader) (*QuotedPrintableCleaner, error) {
-	reader := bufio.NewReader(r)
-	var data []byte
-
-	for {
-		line, err := reader.ReadBytes('\n')
-
-		if len(line) != 0 {
-			if len(line) == 1 && line[0] == '=' {
-				continue
-			}
-
-			data = append(data, line...)
-		}
-
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			}
-			return nil, err
-		}
-	}
-
-	return &QuotedPrintableCleaner{bytes.NewReader(data)}, nil
-}
-
-func (c *QuotedPrintableCleaner) Read(b []byte) (int, error) {
-	return c.r.Read(b)
-}
-
 func getTransferDecoder(r io.Reader, encoding string) (io.Reader, error) {
 	switch strings.ToLower(encoding) {
 	case "base64":
-		cleaner, err := NewBase64Cleaner(r)
+		cleaner, err := NewBase64Sanitizer(r)
 		if err != nil {
 			return nil, err
 		}
 		return base64.NewDecoder(base64.StdEncoding, cleaner), nil
 
 	case "quoted-printable":
-		cleaner, err := NewQuotedPrintableCleaner(r)
+		cleaner, err := NewQuotedPrintableSanitizer(r)
 		if err != nil {
 			return nil, err
 		}
