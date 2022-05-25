@@ -5,9 +5,10 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/sbin/peroxide
+ExecStart=/usr/sbin/peroxide -log-file=/var/log/peroxide/peroxide.log -log-level Info
 User=peroxide
 Group=peroxide
+ExecReload=/bin/kill -HUP $MAINPID
 
 [Install]
 WantedBy=multi-user.target

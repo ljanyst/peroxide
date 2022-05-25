@@ -1,0 +1,11 @@
+/var/log/peroxide/peroxide.log {
+    rotate 31
+    daily
+    compress
+    delaycompress
+    missingok
+    notifempty
+    postrotate
+        systemctl reload peroxide
+    endscript
+}

@@ -49,3 +49,14 @@ if [ ! -f /etc/systemd/system/peroxide.service ]; then
     sudo cp peroxide.service /etc/systemd/system/peroxide.service
     sudo systemctl daemon-reload
 fi
+
+if [ ! -d /var/log/peroxide ]; then
+    sudo mkdir /var/log/peroxide
+    sudo chown peroxide:peroxide /var/log/peroxide
+    sudo chmod 750 /var/log/peroxide
+fi
+
+if [ -d /etc/logrotate.d ] && [ ! -f /etc/logrotate.d/peroxide ]; then
+    sudo cp peroxide.logrotate /etc/logrotate.d/peroxide
+    sudo systemctl restart logrotate
+fi
