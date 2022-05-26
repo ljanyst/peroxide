@@ -1,0 +1,36 @@
+{
+  "Identifier": "com.example.account",
+  "CardDAV": [{
+    "AccountDescription": "Contacts",
+    "HostName": "dav.example.com",
+    "Username": "foo",
+    "Password": "bar",
+    "UseSSL": true,
+    "Port": 443,
+    "PrincipalURL": "/dav.php/addressbooks/foo/default/"
+  }],
+  "CalDAV": [{
+    "AccountDescription": "Calendar",
+    "HostName": "dav.example.com",
+    "Username": "foo",
+    "Password": "bar",
+    "UseSSL": true,
+    "Port": 443,
+    "PrincipalURL": "/dav.php/calendars/foo/default/"
+  }],
+  "Email": [{
+    "AccountDescription": "Email",
+    "AccountName": "Foo Bar",
+    "Address": "foo@example.com",
+    "IncomingHostName": "mail.example.com",
+    "IncomingPortNumber": 1143,
+    "IncomingUsername": "foo..ipad@example.com",
+    "IncomingPassword": "-----cut-----",
+    "IncomingUseSSL": false,
+    "OutgoingHostName": "mail.example.com",
+    "OutgoingPortNumber": 1025,
+    "OutgoingUsername": "foo..ipad@example.com",
+    "OutgoingPassword": "-----cut-----",
+    "OutgoingUseSSL": false
+  }]
+}
