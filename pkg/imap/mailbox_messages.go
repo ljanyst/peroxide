@@ -324,7 +324,7 @@ func (im *imapMailbox) labelMessages(uid bool, seqSet *imap.SeqSet, targetLabel 
 // SearchMessages searches messages. The returned list must contain UIDs if
 // uid is set to true, or sequence numbers otherwise.
 func (im *imapMailbox) SearchMessages(isUID bool, criteria *imap.SearchCriteria) (ids []uint32, err error) { //nolint[gocyclo]
-	if criteria.Not != nil || criteria.Or != nil {
+	if criteria.Or != nil {
 		return nil, errors.New("unsupported search query")
 	}
 
@@ -498,6 +498,17 @@ func (im *imapMailbox) SearchMessages(isUID bool, criteria *imap.SearchCriteria)
 		ids = append(ids, id)
 	}
 
+	toRemove := []uint32{}
+	for _, negativeCriteria := range criteria.Not {
+		negIds, err := im.SearchMessages(isUID, negativeCriteria)
+		if err != nil {
+			return nil, err
+		}
+		toRemove = arrayUnion(toRemove, negIds)
+	}
+
+	ids = arrayDifference(ids, toRemove)
+
 	return ids, nil
 }
 
@@ -636,6 +647,34 @@ func arrayIntersection(a, b []string) (c []string) {
 		if _, ok := m[item]; ok {
 			c = append(c, item)
 		}
+	}
+	return
+}
+
+func arrayUnion(a, b []uint32) (c []uint32) {
+	m := make(map[uint32]bool)
+	for _, item := range a {
+		m[item] = true
+	}
+	for _, item := range b {
+		m[item] = true
+	}
+	for item, _ := range m {
+		c = append(c, item)
+	}
+	return
+}
+
+func arrayDifference(a, b []uint32) (c []uint32) {
+	m := make(map[uint32]bool)
+	for _, item := range a {
+		m[item] = true
+	}
+	for _, item := range b {
+		delete(m, item)
+	}
+	for item, _ := range m {
+		c = append(c, item)
 	}
 	return
 }
