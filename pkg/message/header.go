@@ -32,14 +32,23 @@ import (
 func HeaderLines(header []byte) [][]byte {
 	var (
 		lines [][]byte
+		quote int
 	)
 
 	forEachLine(bufio.NewReader(bytes.NewReader(header)), func(line []byte) {
 		l := bytes.SplitN(line, []byte(`: `), 2)
-		isLineContinuation := !bytes.Equal(bytes.TrimLeftFunc(l[0], unicode.IsSpace), l[0]) // has whitespace indent at beginning
+
+		// has whitespace indent at beginning
+		isLineContinuation := !bytes.Equal(bytes.TrimLeftFunc(l[0], unicode.IsSpace), l[0])
+
+		// no quotes opened and we're dealing with MS Word
+		if quote%2 != 0 && bytes.HasPrefix(lines[len(lines)-1], []byte("Content")) {
+			isLineContinuation = true
+		}
 
 		switch {
 		case len(bytes.TrimSpace(line)) == 0:
+			quote = 0
 			lines = append(lines, line)
 
 		case isLineContinuation:
@@ -50,8 +59,11 @@ func HeaderLines(header []byte) [][]byte {
 			}
 
 		default:
+			quote = 0
 			lines = append(lines, line)
 		}
+
+		quote += bytes.Count(line, []byte(`"`))
 	})
 
 	return lines
