@@ -29,6 +29,7 @@ require (
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/golang/mock v1.4.4
 	github.com/google/go-cmp v0.5.5
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/jaytaylor/html2text v0.0.0-20200412013138-3577fbdbcff7
 	github.com/kr/text v0.2.0 // indirect
