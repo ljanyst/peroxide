@@ -101,5 +101,23 @@ management described in the program's help message. Any change to the
 configuration, including adding accounts or keys, necessitates a restart of the
 server.
 
+Device Configuration
+--------------------
+
+When working with laptops or desktop computers, it's easy to enter this
+configuration data by hand into whatever program you need. The
+`cmd/mobileconfig-gen` directory contains a program that generates device
+configuration files for iOS. It takes JSON as input:
+
+
+    ]==> ./mobileconfig-gen -in account.json -out account.mobileconfig
+
+You can upload this file to some secret location (it contains your passwords)
+and generate the QR code pointing to it like this:
+
+    ]==> qrencode -t ansiutf8 https://secret.location/of/the/mobile/config/file
+
+Then, scan this code with your device's camera.
+
 [1]: https://github.com/ProtonMail/proton-bridge
 [2]: https://github.com/emersion/hydroxide
