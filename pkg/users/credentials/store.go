@@ -307,7 +307,7 @@ func (s *Store) Delete(userID string) (err error) {
 	}
 
 	delete(s.creds, userID)
-	return nil
+	return s.saveCredentials()
 }
 
 func (s *Store) saveCredentials() error {
