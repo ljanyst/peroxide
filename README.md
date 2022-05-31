@@ -9,16 +9,9 @@ running it on the open Internet.
 Peroxide is a fork of the [ProtonMail bridge][1]. Its goal is to be much like
 [Hydroxide][2] except with as much re-use of the upstream code as possible. The
 re-use ensures that the upstream changes to the service APIs can be merged in as
-fast and as efficiently as possible. At the same time, Peroxide aims to:
-
- * run as a server providing data access using standard protocols so that a wide
-   variety of devices can use their native productivity tools instead of
-   ProtonMail's proprietary ones
- * implement features that are missing from the upstream version because they
-   are hard to make work with Outlook
- * make things easy to hack on without a deluge of dependencies providing little
-   value in the context of the two above points
- * limit the exposure to supply chain attacs
+fast and as efficiently as possible. At the same time, Peroxide aims to run as a
+server providing data access using standard protocols so that a wide variety of
+devices can use their native productivity tools.
 
 To that end, Peroxide:
 
@@ -36,6 +29,9 @@ To that end, Peroxide:
 Server setup
 ------------
 
+⚠ **Warning**: This software has not been thoroughly reviewed for security.
+You should only use it if you know what you're doing. I strongly advise against
+running it on the open Internet.
 
 Run the `install.sh` script to install peroxide in your system.
 
