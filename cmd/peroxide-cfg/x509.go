@@ -60,6 +60,7 @@ func generateX509(org, cn, certFile, keyFile string) error {
 		IsCA:                  true,
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().Add(20 * 365 * 24 * time.Hour),
+		DNSNames:              []string{cn},
 	}
 
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
