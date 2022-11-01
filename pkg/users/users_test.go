@@ -222,6 +222,7 @@ func (fr *fullStackReporter) Errorf(format string, args ...interface{}) {
 	fmt.Printf("err: "+format+"\n", args...)
 	fr.T.Fail()
 }
+
 func (fr *fullStackReporter) Fatalf(format string, args ...interface{}) {
 	debug.PrintStack()
 	fmt.Printf("fail: "+format+"\n", args...)

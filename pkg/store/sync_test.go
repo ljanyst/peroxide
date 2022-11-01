@@ -155,9 +155,6 @@ func generateIDsR(start, stop int) []string {
 // Tests
 
 func TestSyncAllMail(t *testing.T) { //nolint:funlen
-	m, clear := initMocks(t)
-	defer clear()
-
 	numberOfMessages := 10000
 
 	api := &mockLister{
