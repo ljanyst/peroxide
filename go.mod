@@ -7,15 +7,15 @@ go 1.15
 require (
 	github.com/emersion/go-imap v1.0.6
 	github.com/emersion/go-message v0.12.1-0.20201221184100-40c3f864532b
-	github.com/jameskeane/bcrypt v0.0.0-20170924085257-7509ea014998 // indirect
 )
 
 require (
-	github.com/ProtonMail/go-crypto v0.0.0-20211221144345-a4f6767435ab
+	github.com/ProtonMail/bcrypt v0.0.0-20211005172633-e235017c1baf // indirect
+	github.com/ProtonMail/go-crypto v0.0.0-20220623141421-5afb4c282135
 	github.com/ProtonMail/go-rfc5322 v0.8.0
-	github.com/ProtonMail/go-srp v0.0.1
+	github.com/ProtonMail/go-srp v0.0.5
 	github.com/ProtonMail/go-vcard v0.0.0-20180326232728-33aaa0a0c8a5
-	github.com/ProtonMail/gopenpgp/v2 v2.4.1
+	github.com/ProtonMail/gopenpgp/v2 v2.4.7
 	github.com/PuerkitoBio/goquery v1.5.1
 	github.com/emersion/go-imap-appendlimit v0.0.0-20190308131241-25671c986a6a
 	github.com/emersion/go-imap-move v0.0.0-20190710073258-6e5a51a5b342
@@ -43,14 +43,14 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/vmihailenco/msgpack/v5 v5.1.3
 	go.etcd.io/bbolt v1.3.6
-	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
+	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
 	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4
-	golang.org/x/sys v0.0.0-20220111092808-5a964db01320 // indirect
+	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b // indirect
 	golang.org/x/text v0.3.7
 )
 
 replace (
 	github.com/emersion/go-imap => github.com/ProtonMail/go-imap v0.0.0-20201228133358-4db68cea0cac
 	github.com/emersion/go-message => github.com/ProtonMail/go-message v0.0.0-20210611055058-fabeff2ec753
-	github.com/jameskeane/bcrypt => github.com/ProtonMail/bcrypt v0.0.0-20210511135022-227b4adcab57
+	github.com/keybase/go-keychain => github.com/cuthix/go-keychain v0.0.0-20220405075754-31e7cee908fe
 )
