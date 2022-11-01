@@ -121,6 +121,10 @@ func (iu *imapUser) Username() string {
 func (iu *imapUser) ListMailboxes(showOnlySubcribed bool) ([]goIMAPBackend.Mailbox, error) {
 	mailboxes := []goIMAPBackend.Mailbox{}
 	for _, storeMailbox := range iu.storeAddress.ListMailboxes() {
+		if storeMailbox.LabelID() == pmapi.AllMailLabel && !iu.backend.isAllMailVisible {
+			continue
+		}
+
 		if showOnlySubcribed && !iu.isSubscribed(storeMailbox.LabelID()) {
 			continue
 		}

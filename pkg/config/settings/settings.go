@@ -44,6 +44,7 @@ const (
 	ServerAddress         = "ServerAddress"
 	CredentialsStore      = "CredentialsStore"
 	BCCSelf               = "BCCSelf"
+	IsAllMailVisible      = "IsAllMailVisible"
 )
 
 type Settings struct {
@@ -81,6 +82,7 @@ func (s *Settings) setDefaultValues() {
 	s.setDefault(IMAPPortKey, DefaultIMAPPort)
 	s.setDefault(SMTPPortKey, DefaultSMTPPort)
 	s.setDefault(BCCSelf, "false")
+	s.setDefault(IsAllMailVisible, "true")
 
 	settingsDir := "/etc/peroxide"
 	s.setDefault(CacheDir, "/var/cache/peroxide/cache")

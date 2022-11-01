@@ -128,7 +128,8 @@ func (b *Bridge) Run() error {
 	}
 
 	bccSelf := b.settings.GetBool(settings.BCCSelf)
-	imapBackend := imap.NewIMAPBackend(b.listener, b.settings, b.Users, bccSelf)
+	isAllMailVisible := b.settings.GetBool(settings.IsAllMailVisible)
+	imapBackend := imap.NewIMAPBackend(b.listener, b.settings, b.Users, bccSelf, isAllMailVisible)
 	smtpBackend := smtp.NewSMTPBackend(b.listener, b.Users, bccSelf)
 	serverAddress := b.settings.Get(settings.ServerAddress)
 

@@ -24,10 +24,11 @@
 // When IMAP clients request message literals (or parts thereof), we sometimes need to build RFC822 message literals.
 // To do this, we pass build jobs to the message builder, which internally manages its own parallelism.
 // Summary:
-//  - each IMAP fetch request is handled in parallel,
-//  - within each IMAP fetch request, individual items are handled by a pool of `fetchWorkers` workers,
-//  - within each worker, build jobs are posted to the message builder,
-//  - the message builder handles build jobs using its own, independent worker pool,
+//   - each IMAP fetch request is handled in parallel,
+//   - within each IMAP fetch request, individual items are handled by a pool of `fetchWorkers` workers,
+//   - within each worker, build jobs are posted to the message builder,
+//   - the message builder handles build jobs using its own, independent worker pool,
+//
 // The builder will handle jobs in parallel up to its own internal limit. This prevents it from overwhelming API.
 package imap
 
@@ -46,11 +47,12 @@ import (
 )
 
 type imapBackend struct {
-	usersMgr      *users.Users
-	updates       *imapUpdates
-	eventListener listener.Listener
-	listWorkers   int
-	bccSelf       bool
+	usersMgr         *users.Users
+	updates          *imapUpdates
+	eventListener    listener.Listener
+	listWorkers      int
+	bccSelf          bool
+	isAllMailVisible bool
 
 	users       map[string]*imapUser
 	usersLocker sync.Locker
@@ -66,25 +68,13 @@ func NewIMAPBackend(
 	setting *settings.Settings,
 	users *users.Users,
 	bccSelf bool,
+	isAllMailVisible bool,
 ) *imapBackend { //nolint[golint]
 
 	imapWorkers := setting.GetInt(settings.IMAPWorkers)
 	cacheDir := setting.Get(settings.CacheDir)
-	backend := newIMAPBackend(cacheDir, users, eventListener, imapWorkers, bccSelf)
 
-	go backend.monitorDisconnectedUsers()
-
-	return backend
-}
-
-func newIMAPBackend(
-	cacheDir string,
-	users *users.Users,
-	eventListener listener.Listener,
-	listWorkers int,
-	bccSelf bool,
-) *imapBackend {
-	return &imapBackend{
+	backend := &imapBackend{
 		usersMgr:      users,
 		updates:       newIMAPUpdates(),
 		eventListener: eventListener,
@@ -94,9 +84,15 @@ func newIMAPBackend(
 
 		imapCachePath: filepath.Join(cacheDir, "imap_backend_cache.json"),
 		imapCacheLock: &sync.RWMutex{},
-		listWorkers:   listWorkers,
-		bccSelf:       bccSelf,
+		listWorkers:   imapWorkers,
+
+		bccSelf:          bccSelf,
+		isAllMailVisible: isAllMailVisible,
 	}
+
+	go backend.monitorDisconnectedUsers()
+
+	return backend
 }
 
 func (ib *imapBackend) getUser(address, slot, password string) (*imapUser, error) {
