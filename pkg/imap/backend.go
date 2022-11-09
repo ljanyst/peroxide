@@ -165,7 +165,7 @@ func (ib *imapBackend) Login(_ *imap.ConnInfo, username, password string) (goIMA
 	}
 
 	if err := imapUser.user.CheckCredentials(slot, password); err != nil {
-		log.WithError(err).Error("Could not check bridge password")
+		log.WithError(err).Errorf("Could not check bridge password: %s %s", username, slot)
 		if err := imapUser.Logout(); err != nil {
 			log.WithError(err).Warn("Could not logout user after unsuccessful login check")
 		}
@@ -188,7 +188,7 @@ func (ib *imapBackend) Login(_ *imap.ConnInfo, username, password string) (goIMA
 
 // Updates returns a channel of updates for IMAP IDLE extension.
 func (ib *imapBackend) Updates() <-chan goIMAPBackend.Update {
-	return ib.updates.ch
+	return ib.updates.chout
 }
 
 func (ib *imapBackend) CreateMessageLimit() *uint32 {

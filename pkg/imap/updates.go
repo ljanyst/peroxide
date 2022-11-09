@@ -22,11 +22,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ljanyst/peroxide/pkg/store"
-	"github.com/ljanyst/peroxide/pkg/message"
-	"github.com/ljanyst/peroxide/pkg/pmapi"
 	imap "github.com/emersion/go-imap"
 	goIMAPBackend "github.com/emersion/go-imap/backend"
+	"github.com/ljanyst/peroxide/pkg/message"
+	"github.com/ljanyst/peroxide/pkg/pmapi"
+	"github.com/ljanyst/peroxide/pkg/store"
 	"github.com/sirupsen/logrus"
 )
 
@@ -37,20 +37,46 @@ const (
 	operationDeleteMessage operation = "expunge"
 )
 
+type updateHelper struct {
+	data       goIMAPBackend.Update
+	expiration time.Time
+}
+
 type imapUpdates struct {
 	lock            sync.Locker
 	blocking        map[string]bool
 	delayedExpunges map[string][]chan struct{}
-	ch              chan goIMAPBackend.Update
+	chout           chan goIMAPBackend.Update
+	chin            chan updateHelper
 }
 
 func newIMAPUpdates() *imapUpdates {
-	return &imapUpdates{
+	iu := &imapUpdates{
 		lock:            &sync.Mutex{},
 		blocking:        map[string]bool{},
 		delayedExpunges: map[string][]chan struct{}{},
-		ch:              make(chan goIMAPBackend.Update),
+		chout:           make(chan goIMAPBackend.Update),
+		chin:            make(chan updateHelper, 1000),
 	}
+
+	go func() {
+		for {
+			upd := <-iu.chin
+
+			if time.Now().After(upd.expiration) {
+				log.Warn("IMAP update could not be sent (timeout)")
+				continue
+			}
+
+			select {
+			case iu.chout <- upd.data:
+			case <-time.After(1 * time.Second):
+				log.Warn("IMAP update could not be sent (timeout)")
+			}
+		}
+	}()
+
+	return iu
 }
 
 func (iu *imapUpdates) block(address, mailboxName string, op operation) {
@@ -192,20 +218,16 @@ func (iu *imapUpdates) MailboxStatus(address, mailboxName string, total, unread,
 }
 
 func (iu *imapUpdates) sendIMAPUpdate(update goIMAPBackend.Update, isBlocking bool) {
-	if iu.ch == nil {
+	if iu.chout == nil {
 		log.Trace("IMAP IDLE unavailable")
 		return
 	}
 
 	done := update.Done()
-	go func() {
-		select {
-		case <-time.After(1 * time.Second):
-			log.Warn("IMAP update could not be sent (timeout)")
-			return
-		case iu.ch <- update:
-		}
-	}()
+	iu.chin <- updateHelper{
+		data:       update,
+		expiration: time.Now().Add(1 * time.Second),
+	}
 
 	if !isBlocking {
 		return
