@@ -13,6 +13,9 @@ fast and as efficiently as possible. At the same time, Peroxide aims to run as a
 server providing data access using standard protocols so that a wide variety of
 devices can use their native productivity tools.
 
+Like the original bridge and unlike Hydroxide, Peroxide requires a paid
+ProtonMail account.
+
 To that end, Peroxide:
 
  * is buildable using plain `go build`
