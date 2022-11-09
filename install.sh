@@ -22,9 +22,15 @@ if [ $? != 0 ]; then
     sudo groupadd -r peroxide
 fi
 
+GRP=""
+getent group www-data >/dev/null 2>&1
+if [ $? == 0 ]; then
+    GRP="-G www-data"
+fi
+
 getent passwd peroxide >/dev/null 2>&1
 if [ "$?" != "0" ]; then
-    sudo useradd --system --no-create-home -g peroxide -G www-data peroxide
+    sudo useradd --system --no-create-home -g peroxide $GRP peroxide
 fi
 
 set -e
