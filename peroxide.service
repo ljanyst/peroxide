@@ -9,6 +9,10 @@ ExecStart=/usr/sbin/peroxide -log-file=/var/log/peroxide/peroxide.log -log-level
 User=peroxide
 Group=peroxide
 ExecReload=/bin/kill -HUP $MAINPID
+CacheDirectory=peroxide peroxide/cache
+CacheDirectoryMode=0700
+LogsDirectory=peroxide
+LogsDirectoryMode=0750
 
 [Install]
 WantedBy=multi-user.target
