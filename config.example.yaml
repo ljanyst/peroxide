@@ -7,8 +7,8 @@
 #  "CacheDir":         "/var/cache/peroxide/cache",
 #  "X509Key":          "/etc/peroxide/key.pem",
 #  "X509Cert":         "/etc/peroxide/cert.pem",
-#  "CookieJar":        "/etc/peroxide/cookies.json",
-#  "CredentialsStore": "/etc/peroxide/credentials.json",
+#  "CookieJar":        "/var/lib/peroxide/cookies.json",
+#  "CredentialsStore": "/var/lib/peroxide/credentials.json",
 #  "ServerAddress":    "[::0]",
 #  "BCCSelf":          "false"
 }

@@ -13,6 +13,8 @@ CacheDirectory=peroxide peroxide/cache
 CacheDirectoryMode=0700
 LogsDirectory=peroxide
 LogsDirectoryMode=0750
+StateDirectory=peroxide
+StateDirectoryMode=0700
 
 [Install]
 WantedBy=multi-user.target

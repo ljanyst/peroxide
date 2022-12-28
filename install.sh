@@ -41,6 +41,12 @@ if [ ! -d /var/cache/peroxide ]; then
     sudo chmod 700 /var/cache/peroxide
 fi
 
+if [ ! -d /var/lib/peroxide ]; then
+    sudo mkdir /var/lib/peroxide
+    sudo chown peroxide:peroxide /var/lib/peroxide
+    sudo chmod 700 /var/lib/peroxide
+fi
+
 if [ ! -f /etc/peroxide.conf ]; then
     sudo cp config.example.yaml /etc/peroxide.conf
 fi

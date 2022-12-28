@@ -85,10 +85,11 @@ func (s *Settings) setDefaultValues() {
 	s.setDefault(IsAllMailVisible, "true")
 
 	settingsDir := "/etc/peroxide"
+	stateDir := "/var/lib/peroxide"
 	s.setDefault(CacheDir, "/var/cache/peroxide/cache")
 	s.setDefault(X509Key, filepath.Join(settingsDir, "key.pem"))
 	s.setDefault(X509Cert, filepath.Join(settingsDir, "cert.pem"))
-	s.setDefault(CookieJar, filepath.Join(settingsDir, "cookies.json"))
-	s.setDefault(CredentialsStore, filepath.Join(settingsDir, "credentials.json"))
+	s.setDefault(CookieJar, filepath.Join(stateDir, "cookies.json"))
+	s.setDefault(CredentialsStore, filepath.Join(stateDir, "credentials.json"))
 	s.setDefault(ServerAddress, "127.0.0.1")
 }
