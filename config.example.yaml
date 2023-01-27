@@ -1,4 +1,3 @@
-{
 #  "UserPortImap":     "1143",
 #  "UserPortSmtp":     "1025",
 #  "AllowProxy":       "false",
@@ -11,4 +10,3 @@
 #  "CredentialsStore": "/etc/peroxide/credentials.json",
 #  "ServerAddress":    "[::0]",
 #  "BCCSelf":          "false"
-}
